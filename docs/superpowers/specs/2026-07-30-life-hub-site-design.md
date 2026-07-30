@@ -31,8 +31,9 @@ Persistent left sidebar (Linear/Notion-style workspace), collapsing to a drawer 
 
 Pages:
 
-- **Home** — dashboard: assignments due soon (overdue flagged), current courses,
-  latest projects. "Open this and know where my life stands."
+- **Home** — dashboard: assignments due soon (due within the next 7 days, plus anything
+  overdue, flagged), current courses, latest projects. "Open this and know where my
+  life stands."
 - **IITH → Courses** — index of courses grouped by semester; each course page shows
   code, name, semester, credits, status, notes (body), and its assignments.
 - **IITH → Assignments** — single list grouped by status (todo / doing / done),
