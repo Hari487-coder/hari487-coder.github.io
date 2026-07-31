@@ -1,0 +1,531 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import Base from '../../layouts/Base.astro';
+
+const courses = (await getCollection('courses')).sort((a, b) =>
+  a.data.code.localeCompare(b.data.code),
+);
+const siteCourses = courses.map((c) => ({ id: c.id, code: c.data.code, name: c.data.name }));
+
+const assignments = await getCollection('assignments');
+const trackedTitles = assignments.map((a) =>
+  a.data.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(),
+);
+---
+
+<Base
+  title="Inbox"
+  description="What needs attention: pending Google Classroom work and important IITH mail, live."
+>
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">IIT Hyderabad</p>
+      <h1>Inbox</h1>
+      <p class="subtitle">
+        Pending Classroom work and mail that needs attention, pulled live from your IITH
+        Google account. Nothing is stored anywhere.
+      </p>
+    </div>
+    <button class="btn-secondary" id="refresh" hidden>
+      <Icon name="lucide:refresh-cw" /> Refresh
+    </button>
+  </div>
+
+  <div class="card" id="connect-card">
+    <div class="card-row">
+      <h2>Connect Google</h2>
+    </div>
+    <p class="connect-copy">
+      One click connects your IITH Google account with read-only access to Classroom and
+      Gmail. The token lives only in this tab and expires after an hour.
+    </p>
+    <div class="alert-error card-lite" id="auth-error" hidden></div>
+    <p class="actions-row">
+      <button class="btn" id="connect"><Icon name="lucide:log-in" /> Connect Google</button>
+      <span class="meta" id="connect-hint"></span>
+    </p>
+  </div>
+
+  <section class="section" id="classroom-section" hidden>
+    <div class="section-head">
+      <h2>Classroom, pending work</h2>
+      <span class="meta" id="classroom-count"></span>
+    </div>
+    <div class="card">
+      <div id="classroom-loading" class="meta">Loading Classroom...</div>
+      <div class="alert-error card-lite" id="classroom-error" hidden></div>
+      <div id="classroom-empty" class="meta" hidden>Nothing pending in Classroom.</div>
+      <ul class="row-list" id="classroom-list" style="margin-top: 0;" hidden></ul>
+    </div>
+  </section>
+
+  <section class="section" id="mail-section" hidden>
+    <div class="section-head">
+      <h2>Mail, needs attention</h2>
+      <span class="meta" id="mail-count"></span>
+    </div>
+    <div class="card">
+      <div id="mail-loading" class="meta">Loading Gmail...</div>
+      <div class="alert-error card-lite" id="mail-error" hidden></div>
+      <div id="mail-empty" class="meta" hidden>No mail needs attention.</div>
+      <ul class="row-list" id="mail-list" style="margin-top: 0;" hidden></ul>
+    </div>
+  </section>
+
+  <details class="card settings">
+    <summary><Icon name="lucide:settings-2" /> Setup</summary>
+    <div class="settings-body">
+      <label class="field">
+        <span class="field-label">Google OAuth client ID</span>
+        <input id="client-id" type="text" autocomplete="off" placeholder="1234...apps.googleusercontent.com" />
+      </label>
+      <p class="actions-row">
+        <button class="btn-secondary" id="save-client">Save</button>
+        <span class="meta" id="client-status"></span>
+      </p>
+      <p class="meta">
+        Created once in Google Cloud (see docs/google-oauth-setup.md in the repo). The
+        client ID is not a secret; it only works from this site. Tracking an item into
+        the site assignments reuses the GitHub token saved on the Live notes page. If
+        sign-in says your Workspace blocks the app, IITH IT has to allow it.
+      </p>
+    </div>
+  </details>
+</Base>
+
+<style>
+  .connect-copy {
+    margin: 12px 0 0;
+    color: var(--text-secondary);
+    font-size: 14.5px;
+    max-width: 56ch;
+  }
+  .actions-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 14px 0 0;
+  }
+  .card-lite {
+    margin-top: 14px;
+    padding: 13px 16px;
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    border: 1px solid transparent;
+  }
+  .alert-error.card-lite {
+    background: var(--critical-tint);
+    color: var(--critical);
+    border-color: var(--critical-tint-border);
+  }
+  .field-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+  }
+  .field input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    font-size: 14.5px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-family: inherit;
+  }
+  .field input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+  .settings {
+    margin-top: 16px;
+  }
+  .settings summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+  }
+  .settings summary::-webkit-details-marker {
+    display: none;
+  }
+  .settings-body {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 46rem;
+  }
+  :global(.track-controls) {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  :global(.track-controls select) {
+    padding: 6px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 12.5px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-family: inherit;
+  }
+  :global(.track-btn) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  :global(.track-btn:hover:not(:disabled)) {
+    background: var(--surface-soft);
+  }
+  :global(.track-btn:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  :global(.mail-snippet) {
+    color: var(--text-muted);
+    font-size: 12.5px;
+    margin-top: 2px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+</style>
+
+<script define:vars={{ siteCourses, trackedTitles }}>
+  window.__inboxData = { siteCourses, trackedTitles };
+</script>
+
+<script>
+  import {
+    beginAuth,
+    buildAuthUrl,
+    clearToken,
+    explainAuthError,
+    getToken,
+    handleRedirect,
+  } from '../../lib/inbox/auth';
+  import { ApiDisabledError, AuthError, fetchPending, type PendingItem } from '../../lib/inbox/classroom';
+  import { fetchAttention, type MailItem } from '../../lib/inbox/gmail';
+  import { trackAssignment } from '../../lib/inbox/tracker';
+
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
+    document.getElementById(id) as T;
+
+  const data = (window as any).__inboxData as {
+    siteCourses: { id: string; code: string; name: string }[];
+    trackedTitles: string[];
+  };
+  const trackedSet = new Set(data.trackedTitles);
+  const normalize = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+  const els = {
+    connectCard: $('connect-card'),
+    connect: $<HTMLButtonElement>('connect'),
+    connectHint: $('connect-hint'),
+    authError: $('auth-error'),
+    refresh: $<HTMLButtonElement>('refresh'),
+    classroomSection: $('classroom-section'),
+    classroomLoading: $('classroom-loading'),
+    classroomError: $('classroom-error'),
+    classroomEmpty: $('classroom-empty'),
+    classroomList: $<HTMLUListElement>('classroom-list'),
+    classroomCount: $('classroom-count'),
+    mailSection: $('mail-section'),
+    mailLoading: $('mail-loading'),
+    mailError: $('mail-error'),
+    mailEmpty: $('mail-empty'),
+    mailList: $<HTMLUListElement>('mail-list'),
+    mailCount: $('mail-count'),
+    clientId: $<HTMLInputElement>('client-id'),
+    saveClient: $<HTMLButtonElement>('save-client'),
+    clientStatus: $('client-status'),
+  };
+
+  // ---------- settings ----------
+  els.clientId.value = localStorage.getItem('inbox.clientId') ?? '';
+  els.saveClient.addEventListener('click', () => {
+    localStorage.setItem('inbox.clientId', els.clientId.value.trim());
+    els.clientStatus.textContent = 'Saved.';
+    updateConnectState();
+  });
+
+  function updateConnectState() {
+    const hasClient = !!(localStorage.getItem('inbox.clientId') ?? '').trim();
+    els.connect.disabled = !hasClient;
+    els.connectHint.textContent = hasClient
+      ? ''
+      : 'Paste your Google OAuth client ID in Setup below first.';
+  }
+
+  // ---------- rendering ----------
+  const fmtDue = (d: Date | null) =>
+    d
+      ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) +
+        ', ' +
+        d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+      : 'no due date';
+
+  const relTime = (d: Date) => {
+    const mins = Math.round((Date.now() - d.getTime()) / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.round(hrs / 24)}d ago`;
+  };
+
+  function guessCourse(courseName: string): string {
+    const hay = courseName.toLowerCase();
+    const hit =
+      data.siteCourses.find((c) => hay.includes(c.code.toLowerCase())) ??
+      data.siteCourses.find((c) =>
+        c.name.toLowerCase().split(' ').slice(0, 2).every((w) => hay.includes(w)),
+      );
+    return (hit ?? data.siteCourses[0])?.id ?? '';
+  }
+
+  function renderClassroom(items: PendingItem[]) {
+    els.classroomLoading.hidden = true;
+    els.classroomError.hidden = true;
+    els.classroomCount.textContent = String(items.length);
+    els.classroomEmpty.hidden = items.length > 0;
+    els.classroomList.hidden = items.length === 0;
+    els.classroomList.innerHTML = '';
+
+    const ghToken = localStorage.getItem('live.githubToken');
+
+    for (const item of items) {
+      const li = document.createElement('li');
+      const overdue = item.due !== null && item.due.getTime() < Date.now();
+
+      const main = document.createElement('div');
+      main.className = 'row-main';
+      const title = document.createElement('a');
+      title.className = 'row-title';
+      title.href = item.link;
+      title.target = '_blank';
+      title.rel = 'noopener';
+      title.textContent = item.title;
+      const sub = document.createElement('div');
+      sub.className = 'row-sub';
+      sub.textContent = `${item.courseName} · ${fmtDue(item.due)}${item.points ? ` · ${item.points} pts` : ''}`;
+      main.append(title, sub);
+
+      const side = document.createElement('div');
+      side.className = 'row-side track-controls';
+
+      const due = document.createElement('span');
+      due.className = 'row-due' + (overdue ? ' due-hot' : '');
+      due.textContent = overdue ? 'overdue' : '';
+      if (overdue) side.append(due);
+
+      if (trackedSet.has(normalize(item.title))) {
+        const badge = document.createElement('span');
+        badge.className = 'badge badge-good';
+        badge.innerHTML = '<span class="dot" aria-hidden="true"></span>tracked';
+        side.append(badge);
+      } else {
+        const select = document.createElement('select');
+        for (const c of data.siteCourses) {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.code;
+          select.append(opt);
+        }
+        select.value = guessCourse(item.courseName);
+
+        const btn = document.createElement('button');
+        btn.className = 'track-btn';
+        btn.textContent = 'Track on site';
+        if (!ghToken) {
+          btn.disabled = true;
+          btn.title = 'Add a GitHub token in Live notes settings';
+        }
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          btn.textContent = 'Tracking...';
+          try {
+            await trackAssignment({ ghToken: ghToken!, item, courseId: select.value });
+            trackedSet.add(normalize(item.title));
+            const badge = document.createElement('span');
+            badge.className = 'badge badge-good';
+            badge.innerHTML = '<span class="dot" aria-hidden="true"></span>tracked';
+            select.replaceWith(badge);
+            btn.remove();
+          } catch (err) {
+            btn.disabled = false;
+            btn.textContent = 'Track on site';
+            alert(`Tracking failed: ${err instanceof Error ? err.message : err}`);
+          }
+        });
+        side.append(select, btn);
+      }
+
+      li.append(main, side);
+      els.classroomList.append(li);
+    }
+  }
+
+  function renderMail(items: MailItem[]) {
+    els.mailLoading.hidden = true;
+    els.mailError.hidden = true;
+    els.mailCount.textContent = String(items.length);
+    els.mailEmpty.hidden = items.length > 0;
+    els.mailList.hidden = items.length === 0;
+    els.mailList.innerHTML = '';
+
+    for (const item of items) {
+      const li = document.createElement('li');
+      if (!item.unread) li.className = 'row-done';
+
+      const main = document.createElement('div');
+      main.className = 'row-main';
+      const subject = document.createElement('a');
+      subject.className = 'row-title';
+      subject.href = item.link;
+      subject.target = '_blank';
+      subject.rel = 'noopener';
+      subject.textContent = item.subject;
+      const sub = document.createElement('div');
+      sub.className = 'row-sub';
+      sub.textContent = item.from;
+      const snippet = document.createElement('div');
+      snippet.className = 'mail-snippet';
+      snippet.textContent = item.snippet;
+      main.append(subject, sub, snippet);
+
+      const side = document.createElement('div');
+      side.className = 'row-side';
+      if (item.important) {
+        const badge = document.createElement('span');
+        badge.className = 'badge badge-warning';
+        badge.innerHTML = '<span class="dot" aria-hidden="true"></span>important';
+        side.append(badge);
+      }
+      const time = document.createElement('span');
+      time.className = 'row-due';
+      time.textContent = relTime(item.date);
+      side.append(time);
+
+      li.append(main, side);
+      els.mailList.append(li);
+    }
+  }
+
+  function sectionAuthError(el: HTMLElement, loadingEl: HTMLElement) {
+    loadingEl.hidden = true;
+    el.hidden = false;
+    el.innerHTML = '';
+    el.append('Google session expired. ');
+    const btn = document.createElement('button');
+    btn.className = 'track-btn';
+    btn.textContent = 'Reconnect';
+    btn.addEventListener('click', connect);
+    el.append(btn);
+  }
+
+  // ---------- data flow ----------
+  async function loadAll(token: string) {
+    els.connectCard.hidden = true;
+    els.refresh.hidden = false;
+    els.classroomSection.hidden = false;
+    els.mailSection.hidden = false;
+    els.classroomLoading.hidden = false;
+    els.mailLoading.hidden = false;
+    els.classroomList.hidden = true;
+    els.mailList.hidden = true;
+    els.classroomEmpty.hidden = true;
+    els.mailEmpty.hidden = true;
+
+    void fetchPending(token)
+      .then(renderClassroom)
+      .catch((err) => {
+        if (err instanceof AuthError) {
+          clearToken();
+          sectionAuthError(els.classroomError, els.classroomLoading);
+          return;
+        }
+        els.classroomLoading.hidden = true;
+        els.classroomError.hidden = false;
+        els.classroomError.textContent =
+          err instanceof ApiDisabledError
+            ? 'Classroom API blocked or not enabled for this project. Check the Google Cloud setup.'
+            : `Classroom failed: ${err instanceof Error ? err.message : err}`;
+      });
+
+    void fetchAttention(token)
+      .then(renderMail)
+      .catch((err) => {
+        if (err instanceof AuthError) {
+          clearToken();
+          sectionAuthError(els.mailError, els.mailLoading);
+          return;
+        }
+        els.mailLoading.hidden = true;
+        els.mailError.hidden = false;
+        els.mailError.textContent =
+          err instanceof ApiDisabledError
+            ? 'Gmail API blocked or not enabled for this project. Check the Google Cloud setup.'
+            : `Gmail failed: ${err instanceof Error ? err.message : err}`;
+      });
+  }
+
+  function connect() {
+    const clientId = (localStorage.getItem('inbox.clientId') ?? '').trim();
+    if (clientId) beginAuth(clientId);
+  }
+
+  els.connect.addEventListener('click', connect);
+  els.refresh.addEventListener('click', () => {
+    const token = getToken();
+    if (token) void loadAll(token);
+    else {
+      els.connectCard.hidden = false;
+      els.refresh.hidden = true;
+    }
+  });
+
+  // ---------- boot ----------
+  updateConnectState();
+  const redirect = handleRedirect();
+  if (redirect && 'error' in redirect) {
+    els.authError.hidden = false;
+    els.authError.textContent = explainAuthError(redirect.error);
+  }
+  const token = getToken();
+  if (token) void loadAll(token);
+
+  // Debug hook: exercise rendering + auth URL without real Google data.
+  (window as any).__inbox = {
+    render: (pending: PendingItem[], mail: MailItem[]) => {
+      els.connectCard.hidden = true;
+      els.classroomSection.hidden = false;
+      els.mailSection.hidden = false;
+      renderClassroom(
+        pending.map((p) => ({ ...p, due: p.due ? new Date(p.due) : null })),
+      );
+      renderMail(mail.map((m) => ({ ...m, date: new Date(m.date) })));
+    },
+    authUrl: () => buildAuthUrl('TEST_CLIENT_ID.apps.googleusercontent.com'),
+  };
+</script>

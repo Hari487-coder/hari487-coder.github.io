@@ -132,6 +132,24 @@ platform's design evolves and Hari wants parity, re-port tokens from there.
   badge tints and dim sidebar section labels sit slightly under 4.5:1. Do not "fix" them
   without also changing the platform; parity wins here.
 
+## IITH Inbox (`/iith/inbox/`)
+
+Client-side page connecting Hari's IITH Google account: pending Classroom work (state
+based, not date-guessed) + inbox mail that is unread or Gmail-important (14 days), all
+fetched live in the browser. One-click "Track on site" turns a Classroom item into a
+`src/content/assignments/` file via the shared GitHub helper.
+
+- Auth: plain OAuth implicit redirect (NO Google script tag; preserves the
+  zero-third-party-scripts guardrail). Scopes: classroom.courses.readonly,
+  classroom.coursework.me.readonly, gmail.readonly. CSRF state verified.
+- Storage: `inbox.clientId` (localStorage, public-safe), `inbox.token` + `inbox.state`
+  (sessionStorage, this tab only). NO Google data ever at rest or in the repo.
+- Setup runbook: `docs/google-oauth-setup.md`. Known risk: IITH Workspace admin may
+  block the app (`admin_policy_enforced`); page surfaces it plainly.
+- Code: `src/lib/inbox/{auth,classroom,gmail,tracker}.ts`, shared `src/lib/github.ts`
+  (also used by the live recorder's saver), page `src/pages/iith/inbox.astro`.
+- Debug hook: `window.__inbox.render(mockPending, mockMail)` + `.authUrl()`.
+
 ## Gotchas
 
 - Deleting a content file can leave a stale entry in Astro's content store

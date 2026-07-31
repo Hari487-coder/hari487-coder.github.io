@@ -2,10 +2,9 @@
 // to the repo from the browser via the GitHub contents API, with download and
 // copy as escape hatches that can never fail silently.
 
+import { putNewFile } from '../github';
 import { transcriptText, type LiveSession } from './session';
 
-const OWNER = 'Hari487-coder';
-const REPO = 'hari487-coder.github.io';
 const DIR = 'src/content/notes';
 
 function pad(n: number): string {
@@ -41,25 +40,6 @@ export function buildMarkdown(
   return { slugBase: `${session.courseId}-${isoDate(date)}`, content, title };
 }
 
-function toBase64(text: string): string {
-  const bytes = new TextEncoder().encode(text);
-  let binary = '';
-  bytes.forEach((b) => (binary += String.fromCharCode(b)));
-  return btoa(binary);
-}
-
-async function gh(token: string, path: string, init?: RequestInit): Promise<Response> {
-  return fetch(`https://api.github.com${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      ...(init?.headers ?? {}),
-    },
-  });
-}
-
 export async function saveToRepo(args: {
   token: string;
   session: LiveSession;
@@ -68,33 +48,18 @@ export async function saveToRepo(args: {
   const { token, session, date } = args;
   const { slugBase, content, title } = buildMarkdown(session, date);
 
-  // Find a free filename: base, then -2, -3... (second lecture the same day).
-  let slug = slugBase;
-  for (let i = 2; i <= 9; i++) {
-    const head = await gh(token, `/repos/${OWNER}/${REPO}/contents/${DIR}/${slug}.md`);
-    if (head.status === 404) break;
-    if (!head.ok) throw new Error(`GitHub check failed (${head.status})`);
-    slug = `${slugBase}-${i}`;
-  }
-
-  const put = await gh(token, `/repos/${OWNER}/${REPO}/contents/${DIR}/${slug}.md`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      message: `notes: ${title}`,
-      content: toBase64(content),
-    }),
+  const result = await putNewFile({
+    token,
+    dir: DIR,
+    slugBase,
+    content,
+    message: `notes: ${title}`,
   });
 
-  if (!put.ok) {
-    const detail = await put.text().catch(() => '');
-    throw new Error(`GitHub save failed (${put.status}): ${detail.slice(0, 200)}`);
-  }
-
-  const json = await put.json();
   return {
-    path: `${DIR}/${slug}.md`,
-    url: json.content?.html_url ?? `https://github.com/${OWNER}/${REPO}/blob/main/${DIR}/${slug}.md`,
-    siteUrl: `https://hari487-coder.github.io/iith/notes/${slug}/`,
+    path: result.path,
+    url: result.url,
+    siteUrl: `https://hari487-coder.github.io/iith/notes/${result.slug}/`,
   };
 }
 
