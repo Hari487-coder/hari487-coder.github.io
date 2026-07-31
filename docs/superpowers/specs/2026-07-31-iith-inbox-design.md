@@ -40,8 +40,10 @@ stored nowhere; the public repo never contains coursework or mail content.
 - Scopes: `classroom.courses.readonly`, `classroom.coursework.me.readonly`,
   `gmail.readonly` (the metadata scope forbids `q=` queries, so readonly is required).
 - Client ID + allowed origins configured by Hari in a Google Cloud project (setup
-  runbook is part of the deliverable). Client ID is embedded in the page (public by
-  design; origin-locked). The site origin and `http://localhost:4331` are authorized.
+  runbook is part of the deliverable). The client ID is NOT hard-coded: the page has a
+  one-time settings field storing it as `inbox.clientId` in localStorage (public-safe
+  value, origin-locked by Google; per-browser config avoids a rebuild after setup).
+  The site origin and `http://localhost:4331` are authorized origins.
 
 ## Data fetching (all direct from browser with Bearer token)
 
