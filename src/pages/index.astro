@@ -1,0 +1,79 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import LedgerRow from '../components/LedgerRow.astro';
+import ProjectEntry from '../components/ProjectEntry.astro';
+import { burnPercent, daysLeft, fmt, isDueSoon, isOverdue, stamp, todayIST } from '../lib/dates';
+
+const today = todayIST();
+
+const courses = await getCollection('courses');
+const ongoing = courses
+  .filter((c) => c.data.status === 'ongoing')
+  .sort((a, b) => a.data.code.localeCompare(b.data.code));
+
+const assignments = await getCollection('assignments');
+const dueSoon = assignments
+  .filter((a) => a.data.status !== 'done' && isDueSoon(a.data.due, today))
+  .sort((a, b) => a.data.due.getTime() - b.data.due.getTime());
+
+const projects = (await getCollection('projects'))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 4);
+
+const semester = Math.max(...courses.map((c) => c.data.semester));
+const courseById = new Map(courses.map((c) => [c.id, c]));
+---
+
+<Base
+  title="Home"
+  description="Hari Prathap's ledger: IITH coursework, assignments, and everything he ships."
+>
+  <div class="ledger">
+    <p class="log-stamp">{stamp(today)} · SEM {semester} · {dueSoon.length} DUE</p>
+    <h1 class="page-title">The ledger</h1>
+    <p class="page-sub">what is due, what is in session, what shipped.</p>
+
+    <h2>Due soon</h2>
+    {dueSoon.length === 0 && <p class="empty">nothing due this week. logged.</p>}
+    <div class="stagger">
+      {dueSoon.map((a) => {
+        const course = courseById.get(a.data.course.id);
+        const overdue = isOverdue(a.data.due, today);
+        return (
+          <LedgerRow
+            title={a.data.title}
+            href={course ? `/iith/courses/${course.id}/` : undefined}
+            meta={[course?.data.code ?? a.data.course.id]}
+            due={fmt(a.data.due)}
+            dueHot={overdue || daysLeft(a.data.due, today) <= 2}
+            burn={burnPercent(a.data.due, a.data.start, today)}
+            state={overdue ? 'overdue' : a.data.status === 'doing' ? 'doing' : 'todo'}
+            note={a.data.status === 'doing' ? 'in progress' : undefined}
+            tick
+          />
+        );
+      })}
+    </div>
+
+    <h2>Currently taking</h2>
+    <div class="stagger">
+      {ongoing.map((c) => (
+        <LedgerRow
+          title={c.data.name}
+          href={`/iith/courses/${c.id}/`}
+          meta={[c.data.code, ...(c.data.slot ? [`slot ${c.data.slot}`] : [])]}
+          note={`${c.data.credits} credits`}
+          state="doing"
+        />
+      ))}
+    </div>
+
+    <h2>Recently shipped</h2>
+    <div class="stagger">
+      {projects.map((p) => (
+        <ProjectEntry project={p} />
+      ))}
+    </div>
+  </div>
+</Base>

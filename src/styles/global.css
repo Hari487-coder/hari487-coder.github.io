@@ -1,0 +1,486 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Eye-Ease Ledger design tokens (immutable, see docs/superpowers)
+   One accent. Fill duty (rule, ticks, fuses) and text duty (links,
+   due dates) are separate tokens on purpose: contrast discipline
+   lives in tokens, not vigilance.
+   ============================================================ */
+
+:root {
+  color-scheme: light dark;
+
+  --paper: light-dark(#f3f6ee, #141813);
+  --sheet: light-dark(#fbfcf8, #1c211b);
+  --board: light-dark(#e9eee2, #10140e);
+  --ink: light-dark(#222923, #e7ebe2);
+  --ink-2: light-dark(#5c665e, #9aa396);
+  --line: light-dark(#d9e0d3, #2a312a);
+  --accent-fill: light-dark(#bc4708, #ff8a4e);
+  --accent-text: light-dark(#bc4708, #ff8a4e);
+  --wash: light-dark(
+    color-mix(in srgb, #bc4708 8%, #fbfcf8),
+    color-mix(in srgb, #ff8a4e 10%, #1c211b)
+  );
+
+  --font-display: "Archivo Variable", "Archivo", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  --gutter-w: 7rem;
+  --entry-pad: 1.25rem;
+  --radius: 6px;
+}
+
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+/* ============================================================
+   Base
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+html { height: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--wash); }
+
+a { color: var(--accent-text); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+:focus-visible {
+  outline: 2px solid var(--accent-fill);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+}
+
+/* The one uppercase element per page: the log stamp. */
+.log-stamp {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  color: var(--ink-2);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--sheet);
+  color: var(--ink);
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.skip-link:focus { left: 0.75rem; top: 0.75rem; }
+
+/* ============================================================
+   App shell: sidebar (the pad's cover) + main (the sheet)
+   ============================================================ */
+
+.shell {
+  display: grid;
+  grid-template-columns: 15rem 1fr;
+  min-height: 100dvh;
+}
+
+.sidebar {
+  background: var(--board);
+  border-right: 1px solid var(--line);
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  view-transition-name: sidebar;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-stretch: 125%;
+  letter-spacing: 0.05em;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.id-block .role {
+  color: var(--ink-2);
+  font-size: 12.5px;
+  margin-top: 0.2rem;
+}
+
+.id-block .built {
+  margin-top: 0.6rem;
+  color: var(--ink-2);
+}
+
+.side-nav { display: flex; flex-direction: column; gap: 2px; }
+
+.side-nav a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem 0.45rem 0.9rem;
+  border-radius: var(--radius);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+.side-nav a:hover { background: var(--wash); color: var(--ink); text-decoration: none; }
+.side-nav a svg { width: 15px; height: 15px; flex: none; }
+
+/* Active nav item: the tick, same primitive as the dashboard timeline. */
+.side-nav a[aria-current="page"] { color: var(--ink); }
+.side-nav a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -1.25rem;
+  top: 50%;
+  translate: 0 -50%;
+  width: 12px;
+  height: 2px;
+  background: var(--accent-fill);
+  transition: width 150ms ease-out;
+}
+.side-nav a[aria-current="page"]:hover::before { width: 16px; }
+
+.side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 0.75rem; }
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.theme-toggle:hover { background: var(--wash); color: var(--ink); }
+.theme-toggle svg { width: 14px; height: 14px; }
+
+/* Top bar: mobile only */
+.topbar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 1rem;
+  background: var(--board);
+  border-bottom: 1px solid var(--line);
+  view-transition-name: topbar;
+}
+
+.menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+
+.drawer-backdrop { display: none; }
+
+/* ============================================================
+   Main content: graph paper + the ledger
+   ============================================================ */
+
+main.content {
+  padding: 2.5rem 3rem 6rem;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--line) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--line) 45%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+  min-width: 0;
+}
+
+.ledger {
+  position: relative;
+  max-width: 56rem;
+}
+
+/* The living margin rule. */
+.ledger::before {
+  content: "";
+  position: absolute;
+  left: var(--gutter-w);
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent-fill);
+  transform-origin: top;
+  animation: rule-draw 300ms ease-out both;
+}
+
+@keyframes rule-draw {
+  from { transform: scaleY(0); }
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 0.5rem 0 0.75rem;
+  position: relative;
+  z-index: 1;
+}
+
+.page-sub {
+  color: var(--ink-2);
+  margin: 0 0 2rem;
+  padding-left: calc(var(--gutter-w) + var(--entry-pad));
+  max-width: 46rem;
+}
+
+.ledger h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 2.25rem 0 0.5rem;
+  padding-left: calc(var(--gutter-w) + var(--entry-pad));
+}
+
+/* ============================================================
+   Ledger rows
+   ============================================================ */
+
+.lrow {
+  display: grid;
+  grid-template-columns: var(--gutter-w) 1fr;
+  position: relative;
+  padding-block: 0.55rem;
+  border-radius: var(--radius);
+  line-height: 1.45;
+}
+
+.lrow:hover { background: var(--wash); }
+
+.lrow .gutter {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  color: var(--ink-2);
+  text-align: right;
+  padding-right: var(--entry-pad);
+  padding-top: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  transition: color 150ms ease-out;
+}
+
+.lrow:hover .gutter { color: var(--ink); }
+
+.lrow .entry { padding-left: var(--entry-pad); min-width: 0; }
+
+.lrow .entry .title { font-weight: 500; }
+.lrow .entry .title a { color: var(--ink); }
+.lrow .entry .title a:hover { color: var(--accent-text); }
+
+.lrow .entry .note {
+  color: var(--ink-2);
+  font-size: 13.5px;
+  margin-top: 1px;
+}
+
+/* Done entries fade into the paper. */
+.lrow.done, .lrow.done .entry .title a { color: var(--ink-2); }
+
+/* Timeline tick: due-soon rows hang off the rule. */
+.lrow.tick::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--gutter-w) - 5px);
+  top: 1.05rem;
+  width: 12px;
+  height: 2px;
+  background: var(--accent-fill);
+}
+
+/* Due dates that demand attention. */
+.due-hot { color: var(--accent-text) !important; font-weight: 500; }
+
+/* The burn fuse: how much of the window is gone. --burn is 0-100. */
+.fuse {
+  margin-top: 0.4rem;
+  height: 2px;
+  background: var(--line);
+  max-width: 22rem;
+  overflow: hidden;
+}
+
+.fuse::after {
+  content: "";
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--accent-fill);
+  transform: scaleX(calc(var(--burn, 0) / 100));
+  transform-origin: left;
+  animation: fuse-grow 500ms ease-out both;
+}
+
+@keyframes fuse-grow {
+  from { transform: scaleX(0); }
+}
+
+/* Load stagger: rows fade and rise, capped at 8. */
+.stagger > * {
+  opacity: 0;
+  transform: translateY(6px);
+  animation: rise 350ms ease-out forwards;
+}
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 40ms; }
+.stagger > *:nth-child(3) { animation-delay: 80ms; }
+.stagger > *:nth-child(4) { animation-delay: 120ms; }
+.stagger > *:nth-child(5) { animation-delay: 160ms; }
+.stagger > *:nth-child(6) { animation-delay: 200ms; }
+.stagger > *:nth-child(7) { animation-delay: 240ms; }
+.stagger > *:nth-child(n + 8) { animation-delay: 280ms; }
+
+@keyframes rise {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Empty states are logbook entries too. */
+.empty {
+  padding-left: calc(var(--gutter-w) + var(--entry-pad));
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+/* ============================================================
+   Prose (course notes, project writeups)
+   ============================================================ */
+
+.prose {
+  max-width: 72ch;
+  padding-left: calc(var(--gutter-w) + var(--entry-pad));
+}
+
+.prose p { margin: 0 0 1em; }
+
+.prose h2, .prose h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  padding-left: 0;
+  margin: 1.75em 0 0.5em;
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+}
+
+.prose ul { padding-left: 1.25rem; }
+.prose li { margin-bottom: 0.35em; }
+
+/* Detail pages: mono facts hung in the gutter beside the title. */
+.facts { display: flex; flex-direction: column; gap: 1px; }
+
+/* ============================================================
+   Motion discipline
+   ============================================================ */
+
+@view-transition { navigation: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .stagger > * { opacity: 1; transform: none; }
+}
+
+/* ============================================================
+   Mobile: the gutter folds, the rule moves to the left edge
+   ============================================================ */
+
+@media (max-width: 767px) {
+  .shell { grid-template-columns: 1fr; }
+
+  .sidebar {
+    display: none;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(78vw, 17rem);
+    z-index: 60;
+    height: 100dvh;
+    border-right: 1px solid var(--line);
+  }
+
+  html[data-drawer="open"] .sidebar { display: flex; }
+
+  html[data-drawer="open"] .drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--ink) 35%, transparent);
+    border: 0;
+    padding: 0;
+  }
+
+  .topbar { display: flex; }
+
+  main.content { padding: 1.5rem 1rem 4rem; }
+
+  .ledger { --gutter-w: 0rem; --entry-pad: 1rem; }
+
+  .lrow { grid-template-columns: 1fr; }
+
+  .lrow .gutter {
+    text-align: left;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding: 0 0 0.15rem var(--entry-pad);
+  }
+
+  .lrow.tick::before { top: 0.85rem; }
+
+  .page-sub, .ledger h2, .empty, .prose { padding-left: var(--entry-pad); }
+}

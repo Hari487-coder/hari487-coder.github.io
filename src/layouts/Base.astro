@@ -1,0 +1,87 @@
+---
+import '@fontsource-variable/archivo';
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/500.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '../styles/global.css';
+import { Icon } from 'astro-icon/components';
+import Sidebar from '../components/Sidebar.astro';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · Hari Prathap</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:title" content={`${title} · Hari Prathap`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f6ee" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141813" />
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t === 'light' || t === 'dark') {
+            document.documentElement.setAttribute('data-theme', t);
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#content">skip to content</a>
+
+    <header class="topbar">
+      <span class="wordmark">HARI PRATHAP</span>
+      <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="sidebar">
+        <Icon name="ph:list" aria-hidden="true" />
+        menu
+      </button>
+    </header>
+
+    <div class="shell">
+      <Sidebar />
+      <main class="content" id="content">
+        <slot />
+      </main>
+    </div>
+
+    <button class="drawer-backdrop" id="drawer-backdrop" aria-label="Close menu" tabindex="-1"></button>
+
+    <script is:inline>
+      (function () {
+        var html = document.documentElement;
+        var btn = document.getElementById('menu-btn');
+        var backdrop = document.getElementById('drawer-backdrop');
+        if (!btn) return;
+        function setOpen(open) {
+          if (open) html.setAttribute('data-drawer', 'open');
+          else html.removeAttribute('data-drawer');
+          btn.setAttribute('aria-expanded', String(open));
+        }
+        btn.addEventListener('click', function () {
+          setOpen(html.getAttribute('data-drawer') !== 'open');
+        });
+        if (backdrop) backdrop.addEventListener('click', function () { setOpen(false); });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') setOpen(false);
+        });
+      })();
+    </script>
+  </body>
+</html>
