@@ -62,6 +62,41 @@ Writeup, 150-300 words, field-log voice: what it does, what it runs on, what shi
 one honest lesson. No client names. No marketing adjectives.
 ```
 
+### Lecture notes: `src/content/notes/<courseId>-<yyyy-mm-dd>.md`
+
+Usually created by the Live notes recorder (below), but hand-editable like everything else.
+
+```markdown
+---
+title: "EM5090 lecture, 31 Jul 2026: cash flow statements"
+course: em5090          # must match a course filename
+date: 2026-07-31
+---
+
+Markdown notes body.
+```
+
+## Live lecture recorder (`/iith/live/`)
+
+Fully client-side page Hari opens in class (Chrome only): browser speech recognition
+(en-IN, auto-restart, wake lock) streams a transcript; every ~90s Claude
+(`claude-haiku-4-5`, official SDK in browser mode) turns the new transcript into
+updated structured notes; Stop -> Save commits the note file above straight to this
+repo via the GitHub contents API and the site rebuilds.
+
+- Secrets live in localStorage ONLY: `live.anthropicKey` (Anthropic API key) and
+  `live.githubToken` (fine-grained PAT: THIS repo only, contents read-write). Never
+  commit keys; the page ships zero third-party scripts - keep it that way.
+- Session state mirrors to `live.session` in localStorage; a crash or navigation can
+  never lose a lecture (restore banner on next visit). Cursor semantics: transcript
+  chars advance only on successful AI calls, so failures never drop text.
+- Degrades honestly: no key = free transcriber; no token = download/copy; no
+  SpeechRecognition = "use Chrome" notice.
+- Code: `src/lib/live/{recognizer,session,notesEngine,saver}.ts` + `src/pages/iith/live.astro`.
+  A debug hook (`window.__live.injectFinal/tick/state`) exercises the pipeline without a mic.
+- Human rules (documented on the page): get the professor's permission to record;
+  Chrome STT sends audio to Google; saved notes are public.
+
 ## Playbooks
 
 - **"add assignment X due Friday"**: create the file, `git add`, commit, push. Done.
@@ -96,6 +131,13 @@ platform's design evolves and Hari wants parity, re-port tokens from there.
 - Known inherited contrast margins (platform-shipped, kept for fidelity): warning/critical
   badge tints and dim sidebar section labels sit slightly under 4.5:1. Do not "fix" them
   without also changing the platform; parity wins here.
+
+## Gotchas
+
+- Deleting a content file can leave a stale entry in Astro's content store
+  (`node_modules/.astro/data-store.json`), so the deleted page keeps building locally.
+  Fix: `rm -rf node_modules/.astro` and rebuild. CI always builds fresh, so production
+  is never affected.
 
 ## Commands
 

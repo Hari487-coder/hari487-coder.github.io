@@ -10,8 +10,9 @@ const workspace = [
 ];
 
 const iith = [
-  { href: '/iith/', label: 'Courses', icon: 'lucide:graduation-cap', match: (p: string) => p === '/iith/' || p.startsWith('/iith/courses') },
+  { href: '/iith/', label: 'Courses', icon: 'lucide:graduation-cap', match: (p: string) => p === '/iith/' || p.startsWith('/iith/courses') || p.startsWith('/iith/notes') },
   { href: '/iith/assignments/', label: 'Assignments', icon: 'lucide:list-checks', match: (p: string) => p.startsWith('/iith/assignments') },
+  { href: '/iith/live/', label: 'Live notes', icon: 'lucide:mic', match: (p: string) => p.startsWith('/iith/live') },
 ];
 ---
 

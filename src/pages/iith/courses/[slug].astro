@@ -18,6 +18,10 @@ const assignments = (await getCollection('assignments'))
   .filter((a) => a.data.course.id === course.id)
   .sort((a, b) => a.data.due.getTime() - b.data.due.getTime());
 
+const notes = (await getCollection('notes'))
+  .filter((n) => n.data.course.id === course.id)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
 const badge = course.data.status === 'ongoing'
   ? { tone: 'good', label: 'In session' }
   : course.data.status === 'done'
@@ -46,6 +50,29 @@ const badge = course.data.status === 'ongoing'
       <Content />
     </div>
   </div>
+
+  {notes.length > 0 && (
+    <section class="section">
+      <div class="section-head">
+        <h2>Lecture notes</h2>
+        <span class="meta">{notes.length}</span>
+      </div>
+      <div class="card">
+        <ul class="row-list" style="margin-top: 0;">
+          {notes.map((n) => (
+            <li>
+              <div class="row-main">
+                <a class="row-title" href={`/iith/notes/${n.id}/`}>{n.data.title}</a>
+              </div>
+              <div class="row-side">
+                <span class="row-due">{fmt(n.data.date)}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )}
 
   <section class="section">
     <div class="section-head">

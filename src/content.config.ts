@@ -41,4 +41,13 @@ const projects = defineCollection({
   }),
 });
 
-export const collections = { courses, assignments, projects };
+const notes = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/notes' }),
+  schema: z.object({
+    title: z.string(),
+    course: reference('courses'),
+    date: z.coerce.date(),
+  }),
+});
+
+export const collections = { courses, assignments, projects, notes };

@@ -1,0 +1,613 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import Base from '../../layouts/Base.astro';
+
+const courses = (await getCollection('courses')).sort((a, b) => {
+  const rank = (s: string) => (s === 'ongoing' ? 0 : 1);
+  return rank(a.data.status) - rank(b.data.status) || a.data.code.localeCompare(b.data.code);
+});
+
+const courseOptions = courses.map((c) => ({
+  id: c.id,
+  code: c.data.code,
+  name: c.data.name,
+}));
+---
+
+<Base
+  title="Live notes"
+  description="Live lecture recorder: the browser transcribes, Claude takes structured notes, one click saves them to the site."
+>
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">Live</p>
+      <h1>Live lecture notes</h1>
+      <p class="subtitle">
+        Pick the course, hit start, put the laptop near the front. The browser transcribes
+        the lecture and Claude grows structured notes as the professor speaks.
+      </p>
+    </div>
+  </div>
+
+  <div class="alert-info card" id="unsupported" hidden>
+    This browser has no speech recognition. Open this page in Chrome on your laptop or
+    Android phone.
+  </div>
+
+  <div class="alert-info card" id="restore-banner" hidden>
+    <span>There is an unsaved session from <strong id="restore-info"></strong>.</span>
+    <span class="restore-actions">
+      <button class="btn-secondary" id="restore-open">Open it</button>
+      <button class="btn-secondary" id="restore-discard">Discard</button>
+    </span>
+  </div>
+
+  <div class="card">
+    <div class="controls">
+      <label class="field">
+        <span class="field-label">Course</span>
+        <select id="course">
+          {courseOptions.map((c) => (
+            <option value={c.id} data-code={c.code} data-name={c.name}>
+              {c.code} · {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Topic (optional)</span>
+        <input id="topic" type="text" placeholder="e.g. cash flow statements" />
+      </label>
+      <div class="run-controls">
+        <button class="btn" id="start">
+          <Icon name="lucide:mic" /> Start
+        </button>
+        <button class="btn" id="stop" hidden>
+          <Icon name="lucide:square" /> Stop
+        </button>
+        <span class="badge" id="status-badge"><span class="dot" aria-hidden="true"></span><span id="status-text">idle</span></span>
+        <span class="mono meta" id="timer">00:00</span>
+        <span class="mono meta" id="wordcount">0 words</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panes">
+    <div class="card pane">
+      <div class="card-row">
+        <h2>Transcript</h2>
+        <span class="meta">raw, live</span>
+      </div>
+      <div class="pane-body" id="transcript">
+        <p class="meta" id="transcript-empty">Waiting to start.</p>
+        <span id="transcript-final"></span>
+        <span id="transcript-interim" class="interim"></span>
+      </div>
+    </div>
+    <div class="card pane">
+      <div class="card-row">
+        <h2>Notes</h2>
+        <span class="meta" id="notes-status">AI idle</span>
+      </div>
+      <div class="pane-body prose" id="notes">
+        <p class="meta" id="notes-empty">
+          Notes appear here a couple of minutes into the lecture.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="actions-card" hidden>
+    <div class="card-row">
+      <h2>Finish</h2>
+      <span class="meta" id="save-status"></span>
+    </div>
+    <p class="actions-row">
+      <button class="btn" id="save"><Icon name="lucide:upload" /> Save to site</button>
+      <button class="btn-secondary" id="download"><Icon name="lucide:download" /> Download .md</button>
+      <button class="btn-secondary" id="copy"><Icon name="lucide:copy" /> Copy notes</button>
+      <button class="btn-secondary" id="discard"><Icon name="lucide:trash-2" /> Discard</button>
+    </p>
+    <div class="alert-success card-lite" id="save-success" hidden>
+      Saved. The site is rebuilding; the notes will be live in about two minutes at
+      <a id="save-site-link" href="/">this page</a> (<a id="save-repo-link" href="/">commit</a>).
+    </div>
+    <div class="alert-error card-lite" id="save-error" hidden></div>
+  </div>
+
+  <details class="card settings">
+    <summary>
+      <Icon name="lucide:settings-2" /> Keys and privacy
+    </summary>
+    <div class="settings-body">
+      <label class="field">
+        <span class="field-label">Anthropic API key (for live AI notes)</span>
+        <input id="key-anthropic" type="password" autocomplete="off" placeholder="sk-ant-..." />
+      </label>
+      <label class="field">
+        <span class="field-label">GitHub token (fine-grained, this repo only, contents read-write)</span>
+        <input id="key-github" type="password" autocomplete="off" placeholder="github_pat_..." />
+      </label>
+      <p class="actions-row">
+        <button class="btn-secondary" id="save-keys">Save keys</button>
+        <span class="meta" id="keys-status"></span>
+      </p>
+      <p class="meta">
+        Keys are stored only in this browser and sent only to api.anthropic.com and
+        api.github.com. Chrome speech recognition sends lecture audio to Google. Get the
+        professor's permission before recording, and remember saved notes are public on
+        this site. Without an Anthropic key, this page still works as a free live
+        transcriber.
+      </p>
+    </div>
+  </details>
+</Base>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .field {
+    display: block;
+  }
+  .field-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+  }
+  .field select,
+  .field input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    font-size: 14.5px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-family: inherit;
+  }
+  .field select:focus,
+  .field input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+  .run-controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .badge.rec {
+    background: var(--critical-tint);
+    color: var(--critical);
+    border-color: var(--critical-tint-border);
+  }
+  .badge.ok {
+    background: var(--good-tint);
+    color: var(--good);
+    border-color: var(--good-tint-border);
+  }
+  .panes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  @media (max-width: 900px) {
+    .panes {
+      grid-template-columns: 1fr;
+    }
+  }
+  .pane-body {
+    margin-top: 14px;
+    max-height: 420px;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+  .interim {
+    color: var(--text-muted);
+  }
+  .actions-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 14px 0 0;
+  }
+  .card-lite {
+    margin-top: 14px;
+    padding: 13px 16px;
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    border: 1px solid transparent;
+  }
+  .alert-success.card-lite {
+    background: var(--good-tint);
+    color: var(--good);
+    border-color: var(--good-tint-border);
+  }
+  .alert-success.card-lite a {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+  .alert-error.card-lite {
+    background: var(--critical-tint);
+    color: var(--critical);
+    border-color: var(--critical-tint-border);
+  }
+  .alert-info {
+    font-size: 13.5px;
+    color: var(--accent-strong);
+    background: var(--accent-tint);
+    border-color: var(--accent-tint-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .restore-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .settings {
+    margin-top: 16px;
+  }
+  .settings summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+  }
+  .settings summary::-webkit-details-marker {
+    display: none;
+  }
+  .settings-body {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 46rem;
+  }
+  #actions-card {
+    margin-top: 16px;
+  }
+</style>
+
+<script>
+  import { marked } from 'marked';
+  import DOMPurify from 'dompurify';
+  import { createRecognizer, isSupported } from '../../lib/live/recognizer';
+  import {
+    clearSession,
+    createSession,
+    elapsed,
+    loadSession,
+    persistSession,
+    persistSessionNow,
+    transcriptText,
+    wordCount,
+    type LiveSession,
+  } from '../../lib/live/session';
+  import { MIN_DELTA_CHARS, updateNotes } from '../../lib/live/notesEngine';
+  import { downloadMd, saveToRepo } from '../../lib/live/saver';
+
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
+    document.getElementById(id) as T;
+
+  const els = {
+    course: $<HTMLSelectElement>('course'),
+    topic: $<HTMLInputElement>('topic'),
+    start: $<HTMLButtonElement>('start'),
+    stop: $<HTMLButtonElement>('stop'),
+    statusBadge: $('status-badge'),
+    statusText: $('status-text'),
+    timer: $('timer'),
+    wordcount: $('wordcount'),
+    transcriptEmpty: $('transcript-empty'),
+    transcriptFinal: $('transcript-final'),
+    transcriptInterim: $('transcript-interim'),
+    transcriptPane: $('transcript'),
+    notes: $('notes'),
+    notesEmpty: $('notes-empty'),
+    notesStatus: $('notes-status'),
+    actionsCard: $('actions-card'),
+    save: $<HTMLButtonElement>('save'),
+    download: $<HTMLButtonElement>('download'),
+    copy: $<HTMLButtonElement>('copy'),
+    discard: $<HTMLButtonElement>('discard'),
+    saveStatus: $('save-status'),
+    saveSuccess: $('save-success'),
+    saveSiteLink: $<HTMLAnchorElement>('save-site-link'),
+    saveRepoLink: $<HTMLAnchorElement>('save-repo-link'),
+    saveError: $('save-error'),
+    keyAnthropic: $<HTMLInputElement>('key-anthropic'),
+    keyGithub: $<HTMLInputElement>('key-github'),
+    saveKeys: $<HTMLButtonElement>('save-keys'),
+    keysStatus: $('keys-status'),
+    unsupported: $('unsupported'),
+    restoreBanner: $('restore-banner'),
+    restoreInfo: $('restore-info'),
+    restoreOpen: $<HTMLButtonElement>('restore-open'),
+    restoreDiscard: $<HTMLButtonElement>('restore-discard'),
+  };
+
+  let session: LiveSession | null = null;
+  let recording = false;
+  let timerHandle: number | undefined;
+  let tickHandle: number | undefined;
+  let aiBusy = false;
+  let wakeLock: any = null;
+
+  // ---------- keys ----------
+  els.keyAnthropic.value = localStorage.getItem('live.anthropicKey') ?? '';
+  els.keyGithub.value = localStorage.getItem('live.githubToken') ?? '';
+  els.saveKeys.addEventListener('click', () => {
+    localStorage.setItem('live.anthropicKey', els.keyAnthropic.value.trim());
+    localStorage.setItem('live.githubToken', els.keyGithub.value.trim());
+    els.keysStatus.textContent = 'Saved in this browser.';
+  });
+
+  // ---------- rendering ----------
+  function setBadge(text: string, cls: '' | 'rec' | 'ok') {
+    els.statusText.textContent = text;
+    els.statusBadge.classList.remove('rec', 'ok');
+    if (cls) els.statusBadge.classList.add(cls);
+  }
+
+  function renderTranscript() {
+    if (!session) return;
+    els.transcriptEmpty.hidden = session.finals.length > 0;
+    els.transcriptFinal.textContent = transcriptText(session) + ' ';
+    els.wordcount.textContent = `${wordCount(session)} words`;
+    els.transcriptPane.scrollTop = els.transcriptPane.scrollHeight;
+  }
+
+  async function renderNotes() {
+    if (!session) return;
+    if (!session.notes) return;
+    els.notesEmpty.hidden = true;
+    const html = DOMPurify.sanitize(await marked.parse(session.notes));
+    els.notes.innerHTML = html;
+  }
+
+  // ---------- AI loop ----------
+  async function aiTick(final = false) {
+    if (!session || aiBusy) return;
+    const key = localStorage.getItem('live.anthropicKey');
+    if (!key) {
+      els.notesStatus.textContent = 'no API key: transcript only';
+      return;
+    }
+    const deltaLen = transcriptText(session).length - session.cursor;
+    if (deltaLen < (final ? 1 : MIN_DELTA_CHARS)) return;
+
+    aiBusy = true;
+    els.notesStatus.textContent = final ? 'final pass...' : 'updating notes...';
+    try {
+      const result = await updateNotes({ apiKey: key, session });
+      session.notes = result.notes;
+      session.cursor = result.cursor;
+      persistSessionNow(session);
+      await renderNotes();
+      els.notesStatus.textContent = `updated ${new Date().toLocaleTimeString()}`;
+    } catch (err) {
+      els.notesStatus.textContent = 'AI call failed, will retry';
+      console.warn('notes update failed', err);
+    } finally {
+      aiBusy = false;
+    }
+  }
+
+  // ---------- wake lock ----------
+  async function acquireWakeLock() {
+    try {
+      wakeLock = await (navigator as any).wakeLock?.request('screen');
+    } catch {
+      // Not fatal; the phone may still sleep.
+    }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && recording) acquireWakeLock();
+  });
+
+  // ---------- recognizer ----------
+  const recognizer = createRecognizer({
+    onFinal(text) {
+      if (!session) return;
+      session.finals.push(text);
+      persistSession(session);
+      renderTranscript();
+    },
+    onInterim(text) {
+      els.transcriptInterim.textContent = text;
+    },
+    onState(state) {
+      if (state === 'unsupported') {
+        els.unsupported.hidden = false;
+        els.start.disabled = true;
+        return;
+      }
+      if (state === 'denied') {
+        setBadge('mic blocked', '');
+        els.notesStatus.textContent = 'allow microphone access and restart';
+        return;
+      }
+      if (!recording) return;
+      if (state === 'listening') setBadge('listening', 'rec');
+      if (state === 'restarting') setBadge('restarting', '');
+    },
+  });
+
+  // ---------- lifecycle ----------
+  function startTimers() {
+    timerHandle = window.setInterval(() => {
+      if (session) els.timer.textContent = elapsed(session);
+    }, 1000);
+    tickHandle = window.setInterval(() => void aiTick(false), 90_000);
+  }
+
+  function stopTimers() {
+    window.clearInterval(timerHandle);
+    window.clearInterval(tickHandle);
+  }
+
+  function begin(existing?: LiveSession) {
+    const option = els.course.selectedOptions[0];
+    session =
+      existing ??
+      createSession({
+        courseId: els.course.value,
+        courseCode: option?.dataset.code ?? els.course.value,
+        courseName: option?.dataset.name ?? '',
+        topic: els.topic.value.trim(),
+      });
+    persistSessionNow(session);
+    recording = true;
+    els.start.hidden = true;
+    els.stop.hidden = false;
+    els.actionsCard.hidden = true;
+    els.restoreBanner.hidden = true;
+    els.course.disabled = true;
+    els.topic.disabled = true;
+    renderTranscript();
+    void renderNotes();
+    recognizer.start();
+    void acquireWakeLock();
+    startTimers();
+  }
+
+  async function finish() {
+    recording = false;
+    recognizer.stop();
+    stopTimers();
+    setBadge('stopped', '');
+    els.stop.hidden = true;
+    els.start.hidden = false;
+    els.course.disabled = false;
+    els.topic.disabled = false;
+    els.transcriptInterim.textContent = '';
+    try {
+      wakeLock?.release();
+    } catch {
+      // released already
+    }
+    await aiTick(true);
+    els.actionsCard.hidden = false;
+    els.save.disabled = !localStorage.getItem('live.githubToken');
+    els.saveStatus.textContent = els.save.disabled
+      ? 'add a GitHub token in settings to save, or download'
+      : '';
+  }
+
+  els.start.addEventListener('click', () => begin());
+  els.stop.addEventListener('click', () => void finish());
+
+  // ---------- finish actions ----------
+  els.save.addEventListener('click', async () => {
+    if (!session) return;
+    const token = localStorage.getItem('live.githubToken');
+    if (!token) return;
+    els.save.disabled = true;
+    els.saveStatus.textContent = 'saving...';
+    els.saveError.hidden = true;
+    try {
+      const result = await saveToRepo({ token, session, date: new Date() });
+      els.saveSiteLink.href = result.siteUrl;
+      els.saveRepoLink.href = result.url;
+      els.saveSuccess.hidden = false;
+      els.saveStatus.textContent = '';
+      clearSession();
+      session = null;
+    } catch (err) {
+      els.save.disabled = false;
+      els.saveStatus.textContent = '';
+      els.saveError.hidden = false;
+      els.saveError.textContent = `Save failed: ${err instanceof Error ? err.message : String(err)}. Nothing is lost, use Download.`;
+    }
+  });
+
+  els.download.addEventListener('click', () => {
+    if (session) downloadMd(session, new Date());
+  });
+
+  els.copy.addEventListener('click', async () => {
+    if (!session) return;
+    await navigator.clipboard.writeText(session.notes || transcriptText(session));
+    els.saveStatus.textContent = 'copied';
+  });
+
+  els.discard.addEventListener('click', () => {
+    if (!session) return;
+    if (!confirm('Discard this session? The transcript and notes will be gone.')) return;
+    clearSession();
+    session = null;
+    els.actionsCard.hidden = true;
+    els.transcriptFinal.textContent = '';
+    els.notes.innerHTML = '';
+    els.transcriptEmpty.hidden = false;
+    els.timer.textContent = '00:00';
+    els.wordcount.textContent = '0 words';
+    setBadge('idle', '');
+  });
+
+  // ---------- restore ----------
+  const saved = loadSession();
+  if (saved) {
+    els.restoreBanner.hidden = false;
+    els.restoreInfo.textContent = `${saved.courseCode}, ${new Date(saved.startedAt).toLocaleString()}`;
+    els.restoreOpen.addEventListener('click', () => {
+      session = saved;
+      for (const opt of Array.from(els.course.options)) {
+        if (opt.value === saved.courseId) opt.selected = true;
+      }
+      els.topic.value = saved.topic;
+      els.restoreBanner.hidden = true;
+      renderTranscript();
+      void renderNotes();
+      void finish();
+    });
+    els.restoreDiscard.addEventListener('click', () => {
+      clearSession();
+      els.restoreBanner.hidden = true;
+    });
+  }
+
+  // ---------- guards + support ----------
+  if (!isSupported()) {
+    els.unsupported.hidden = false;
+    els.start.disabled = true;
+  }
+  window.addEventListener('beforeunload', (e) => {
+    if (recording) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  // Debug hook: lets a micless environment exercise the whole pipeline.
+  (window as any).__live = {
+    injectFinal(text: string) {
+      if (!session) return;
+      session.finals.push(text);
+      persistSession(session);
+      renderTranscript();
+    },
+    tick: () => aiTick(false),
+    state: () => ({ recording, session }),
+  };
+</script>

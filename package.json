@@ -13,6 +13,7 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
     "@astrojs/check": "^0.9.10",
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/geist": "^5.3.0",
@@ -21,6 +22,8 @@
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.1.6",
     "astro-icon": "^1.1.5",
+    "dompurify": "^3.4.12",
+    "marked": "^18.0.7",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3"
   }
