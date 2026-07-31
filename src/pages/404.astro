@@ -1,0 +1,15 @@
+---
+import Base from '../layouts/Base.astro';
+import { stamp, todayIST } from '../lib/dates';
+
+const today = todayIST();
+---
+
+<Base title="Not found" description="This page is not in the ledger.">
+  <div class="ledger">
+    <p class="log-stamp">{stamp(today)} · 404</p>
+    <h1 class="page-title">Not logged</h1>
+    <p class="page-sub">no entry at this address. the ledger has no page here.</p>
+    <p class="empty"><a href="/">back to today's page</a></p>
+  </div>
+</Base>

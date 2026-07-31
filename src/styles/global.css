@@ -77,6 +77,8 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
   font-size: 11.5px;
   letter-spacing: 0.14em;
   color: var(--ink-2);
+  padding-left: calc(var(--gutter-w) + var(--entry-pad));
+  margin: 0 0 0.25rem;
 }
 
 .skip-link {
@@ -482,5 +484,5 @@ main.content {
 
   .lrow.tick::before { top: 0.85rem; }
 
-  .page-sub, .ledger h2, .empty, .prose { padding-left: var(--entry-pad); }
+  .page-sub, .ledger h2, .empty, .prose, .log-stamp { padding-left: var(--entry-pad); }
 }

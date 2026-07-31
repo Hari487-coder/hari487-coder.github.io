@@ -1,0 +1,39 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { fmt, stamp, todayIST } from '../../lib/dates';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((project) => ({ params: { slug: project.id }, props: { project } }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+const today = todayIST();
+const { title, summary, stack, status, date, repo, live } = project.data;
+---
+
+<Base title={title} description={summary}>
+  <div class="ledger">
+    <p class="log-stamp">{stamp(today)} · PROJECT · {status.toUpperCase()}</p>
+    <h1 class="page-title">{title}</h1>
+
+    <div class="lrow">
+      <div class="gutter facts">
+        <span>{fmt(date)}</span>
+        <span>{status}</span>
+        {live && <span><a href={live}>live site</a></span>}
+        {repo && <span><a href={repo}>source</a></span>}
+      </div>
+      <div class="entry">
+        <div class="note">{summary}</div>
+        <div class="mono" style="color: var(--ink-2); margin-top: 0.3rem;">{stack.join(' · ')}</div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <Content />
+    </div>
+  </div>
+</Base>

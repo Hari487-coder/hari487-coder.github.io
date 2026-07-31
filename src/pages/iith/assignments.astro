@@ -1,0 +1,69 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import LedgerRow from '../../components/LedgerRow.astro';
+import { burnPercent, daysLeft, fmt, isOverdue, stamp, todayIST } from '../../lib/dates';
+
+const today = todayIST();
+const courses = await getCollection('courses');
+const courseById = new Map(courses.map((c) => [c.id, c]));
+
+const assignments = await getCollection('assignments');
+
+const doing = assignments
+  .filter((a) => a.data.status === 'doing')
+  .sort((a, b) => a.data.due.getTime() - b.data.due.getTime());
+const todo = assignments
+  .filter((a) => a.data.status === 'todo')
+  .sort((a, b) => a.data.due.getTime() - b.data.due.getTime());
+const done = assignments
+  .filter((a) => a.data.status === 'done')
+  .sort((a, b) => b.data.due.getTime() - a.data.due.getTime());
+
+const open = doing.length + todo.length;
+
+function row(a: (typeof assignments)[number]) {
+  const course = courseById.get(a.data.course.id);
+  const isDone = a.data.status === 'done';
+  const overdue = !isDone && isOverdue(a.data.due, today);
+  return {
+    title: a.data.title,
+    href: course ? `/iith/courses/${course.id}/` : undefined,
+    meta: [course?.data.code ?? a.data.course.id],
+    due: fmt(a.data.due),
+    dueHot: overdue || (!isDone && daysLeft(a.data.due, today) <= 2),
+    burn: burnPercent(a.data.due, a.data.start, today),
+    state: (isDone ? 'done' : overdue ? 'overdue' : a.data.status) as
+      | 'todo'
+      | 'doing'
+      | 'done'
+      | 'overdue',
+  };
+}
+---
+
+<Base title="Assignments" description="Every assignment across all IITH courses, by status.">
+  <div class="ledger">
+    <p class="log-stamp">{stamp(today)} · ASSIGNMENTS · {open} OPEN</p>
+    <h1 class="page-title">Assignments</h1>
+    <p class="page-sub">everything owed, everything cleared.</p>
+
+    <h2>In progress</h2>
+    {doing.length === 0 && <p class="empty">nothing in progress. logged.</p>}
+    <div class="stagger">
+      {doing.map((a) => <LedgerRow {...row(a)} tick />)}
+    </div>
+
+    <h2>To do</h2>
+    {todo.length === 0 && <p class="empty">queue empty. logged.</p>}
+    <div class="stagger">
+      {todo.map((a) => <LedgerRow {...row(a)} tick />)}
+    </div>
+
+    <h2>Done</h2>
+    {done.length === 0 && <p class="empty">nothing cleared yet.</p>}
+    <div class="stagger">
+      {done.map((a) => <LedgerRow {...row(a)} />)}
+    </div>
+  </div>
+</Base>

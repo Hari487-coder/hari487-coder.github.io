@@ -1,0 +1,43 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import LedgerRow from '../../components/LedgerRow.astro';
+import { stamp, todayIST } from '../../lib/dates';
+
+const today = todayIST();
+const courses = await getCollection('courses');
+
+const semesters = [...new Set(courses.map((c) => c.data.semester))].sort((a, b) => a - b);
+const bySemester = semesters.map((s) => {
+  const list = courses
+    .filter((c) => c.data.semester === s)
+    .sort((a, b) => a.data.code.localeCompare(b.data.code));
+  return { semester: s, list, credits: list.reduce((sum, c) => sum + c.data.credits, 0) };
+});
+---
+
+<Base title="Courses" description="IITH coursework: every course in the M.Tech, semester by semester.">
+  <div class="ledger">
+    <p class="log-stamp">{stamp(today)} · IITH · {courses.length} COURSES</p>
+    <h1 class="page-title">Courses</h1>
+    <p class="page-sub">M.Tech Techno-Entrepreneurship, IIT Hyderabad. Jul 2026 onward.</p>
+
+    {bySemester.map(({ semester, list, credits }) => (
+      <>
+        <h2>Semester {semester}</h2>
+        <div class="stagger">
+          {list.map((c) => (
+            <LedgerRow
+              title={c.data.name}
+              href={`/iith/courses/${c.id}/`}
+              meta={[c.data.code, ...(c.data.slot ? [`slot ${c.data.slot}`] : []), c.data.status]}
+              note={`${c.data.credits} credits${c.data.instructor ? ` · ${c.data.instructor}` : ''}`}
+              state={c.data.status === 'done' ? 'done' : 'doing'}
+            />
+          ))}
+        </div>
+        <p class="empty">{credits} credits this semester</p>
+      </>
+    ))}
+  </div>
+</Base>

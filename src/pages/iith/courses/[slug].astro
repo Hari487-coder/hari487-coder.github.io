@@ -1,0 +1,66 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import LedgerRow from '../../../components/LedgerRow.astro';
+import { burnPercent, daysLeft, fmt, isOverdue, stamp, todayIST } from '../../../lib/dates';
+
+export async function getStaticPaths() {
+  const courses = await getCollection('courses');
+  return courses.map((course) => ({ params: { slug: course.id }, props: { course } }));
+}
+
+const { course } = Astro.props;
+const { Content } = await render(course);
+const today = todayIST();
+
+const assignments = (await getCollection('assignments'))
+  .filter((a) => a.data.course.id === course.id)
+  .sort((a, b) => a.data.due.getTime() - b.data.due.getTime());
+
+const open = assignments.filter((a) => a.data.status !== 'done');
+---
+
+<Base
+  title={course.data.code}
+  description={`${course.data.code} ${course.data.name}: notes and assignments.`}
+>
+  <div class="ledger">
+    <p class="log-stamp">{stamp(today)} · {course.data.code} · {open.length} OPEN</p>
+    <h1 class="page-title">{course.data.name}</h1>
+
+    <div class="lrow">
+      <div class="gutter facts">
+        <span>{course.data.code}</span>
+        {course.data.slot && <span>slot {course.data.slot}</span>}
+        <span>{course.data.credits} credits</span>
+        <span>{course.data.status}</span>
+      </div>
+      <div class="entry">
+        {course.data.instructor && <div class="note">{course.data.instructor}</div>}
+      </div>
+    </div>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <h2>Assignments</h2>
+    {assignments.length === 0 && <p class="empty">nothing logged yet.</p>}
+    <div class="stagger">
+      {assignments.map((a) => {
+        const overdue = isOverdue(a.data.due, today) && a.data.status !== 'done';
+        return (
+          <LedgerRow
+            title={a.data.title}
+            href={a.data.link}
+            meta={[a.data.status === 'done' ? 'done' : a.data.status]}
+            due={fmt(a.data.due)}
+            dueHot={overdue || (a.data.status !== 'done' && daysLeft(a.data.due, today) <= 2)}
+            burn={burnPercent(a.data.due, a.data.start, today)}
+            state={a.data.status === 'done' ? 'done' : overdue ? 'overdue' : a.data.status}
+          />
+        );
+      })}
+    </div>
+  </div>
+</Base>
