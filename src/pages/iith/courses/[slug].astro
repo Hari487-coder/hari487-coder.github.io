@@ -1,8 +1,9 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
-import LedgerRow from '../../../components/LedgerRow.astro';
-import { burnPercent, daysLeft, fmt, isOverdue, stamp, todayIST } from '../../../lib/dates';
+import AssignmentRow from '../../../components/AssignmentRow.astro';
+import StatusBadge from '../../../components/StatusBadge.astro';
+import { daysLeft, fmt, isOverdue, todayIST } from '../../../lib/dates';
 
 export async function getStaticPaths() {
   const courses = await getCollection('courses');
@@ -17,50 +18,60 @@ const assignments = (await getCollection('assignments'))
   .filter((a) => a.data.course.id === course.id)
   .sort((a, b) => a.data.due.getTime() - b.data.due.getTime());
 
-const open = assignments.filter((a) => a.data.status !== 'done');
+const badge = course.data.status === 'ongoing'
+  ? { tone: 'good', label: 'In session' }
+  : course.data.status === 'done'
+    ? { tone: 'neutral', label: 'Completed' }
+    : { tone: 'accent', label: 'Planned' };
 ---
 
 <Base
   title={course.data.code}
   description={`${course.data.code} ${course.data.name}: notes and assignments.`}
 >
-  <div class="ledger">
-    <p class="log-stamp">{stamp(today)} · {course.data.code} · {open.length} OPEN</p>
-    <h1 class="page-title">{course.data.name}</h1>
-
-    <div class="lrow">
-      <div class="gutter facts">
-        <span>{course.data.code}</span>
-        {course.data.slot && <span>slot {course.data.slot}</span>}
-        <span>{course.data.credits} credits</span>
-        <span>{course.data.status}</span>
-      </div>
-      <div class="entry">
-        {course.data.instructor && <div class="note">{course.data.instructor}</div>}
-      </div>
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">{course.data.code}{course.data.slot ? ` · Slot ${course.data.slot}` : ''}</p>
+      <h1>{course.data.name}</h1>
+      <p class="subtitle">
+        Semester {course.data.semester} · {course.data.credits} credits
+        {course.data.instructor ? ` · ${course.data.instructor}` : ''}
+      </p>
     </div>
+    <StatusBadge tone={badge.tone as any} label={badge.label} />
+  </div>
 
+  <div class="card">
     <div class="prose">
       <Content />
     </div>
-
-    <h2>Assignments</h2>
-    {assignments.length === 0 && <p class="empty">nothing logged yet.</p>}
-    <div class="stagger">
-      {assignments.map((a) => {
-        const overdue = isOverdue(a.data.due, today) && a.data.status !== 'done';
-        return (
-          <LedgerRow
-            title={a.data.title}
-            href={a.data.link}
-            meta={[a.data.status === 'done' ? 'done' : a.data.status]}
-            due={fmt(a.data.due)}
-            dueHot={overdue || (a.data.status !== 'done' && daysLeft(a.data.due, today) <= 2)}
-            burn={burnPercent(a.data.due, a.data.start, today)}
-            state={a.data.status === 'done' ? 'done' : overdue ? 'overdue' : a.data.status}
-          />
-        );
-      })}
-    </div>
   </div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Assignments</h2>
+    </div>
+    <div class="card">
+      {assignments.length === 0 ? (
+        <p class="meta" style="margin: 0;">Nothing logged for this course yet.</p>
+      ) : (
+        <ul class="row-list" style="margin-top: 0;">
+          {assignments.map((a) => {
+            const isDone = a.data.status === 'done';
+            const overdue = !isDone && isOverdue(a.data.due, today);
+            return (
+              <AssignmentRow
+                title={a.data.title}
+                href={a.data.link}
+                sub={isDone ? 'Cleared' : 'Open'}
+                due={fmt(a.data.due)}
+                dueHot={overdue || (!isDone && daysLeft(a.data.due, today) <= 2)}
+                state={isDone ? 'done' : overdue ? 'overdue' : a.data.status}
+              />
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  </section>
 </Base>

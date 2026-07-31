@@ -1,0 +1,35 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import StatusBadge from './StatusBadge.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+}
+
+const { project } = Astro.props;
+const { title, summary, stack, status, icon } = project.data;
+
+const BADGE = {
+  live: { tone: 'good', label: 'Live' },
+  building: { tone: 'warning', label: 'Building' },
+  parked: { tone: 'neutral', label: 'Parked' },
+  internal: { tone: 'accent', label: 'Internal' },
+} as const;
+
+const badge = BADGE[status];
+---
+
+<a class="card card-interactive market-card" href={`/projects/${project.id}/`}>
+  <div class="market-card-top">
+    <span class="market-icon"><Icon name={icon} /></span>
+    <div class="row-main">
+      <span class="row-title">{title}</span>
+      <div class="row-sub">{summary}</div>
+    </div>
+  </div>
+  <div class="market-card-foot">
+    <span class="meta mono foot-stack">{stack.slice(0, 3).join(' · ')}</span>
+    <StatusBadge tone={badge.tone} label={badge.label} />
+  </div>
+</a>

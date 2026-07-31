@@ -1,7 +1,9 @@
 ---
 import { getCollection, render } from 'astro:content';
+import { Icon } from 'astro-icon/components';
 import Base from '../../layouts/Base.astro';
-import { fmt, stamp, todayIST } from '../../lib/dates';
+import StatusBadge from '../../components/StatusBadge.astro';
+import { fmt } from '../../lib/dates';
 
 export async function getStaticPaths() {
   const projects = await getCollection('projects');
@@ -10,28 +12,65 @@ export async function getStaticPaths() {
 
 const { project } = Astro.props;
 const { Content } = await render(project);
-const today = todayIST();
 const { title, summary, stack, status, date, repo, live } = project.data;
+
+const BADGE = {
+  live: { tone: 'good', label: 'Live' },
+  building: { tone: 'warning', label: 'Building' },
+  parked: { tone: 'neutral', label: 'Parked' },
+  internal: { tone: 'accent', label: 'Internal' },
+} as const;
 ---
 
 <Base title={title} description={summary}>
-  <div class="ledger">
-    <p class="log-stamp">{stamp(today)} · PROJECT · {status.toUpperCase()}</p>
-    <h1 class="page-title">{title}</h1>
-
-    <div class="lrow">
-      <div class="gutter facts">
-        <span>{fmt(date)}</span>
-        <span>{status}</span>
-        {live && <span><a href={live}>live site</a></span>}
-        {repo && <span><a href={repo}>source</a></span>}
-      </div>
-      <div class="entry">
-        <div class="note">{summary}</div>
-        <div class="mono" style="color: var(--ink-2); margin-top: 0.3rem;">{stack.join(' · ')}</div>
-      </div>
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">{fmt(date)}</p>
+      <h1>{title}</h1>
+      <p class="subtitle">{summary}</p>
     </div>
+    <StatusBadge tone={BADGE[status].tone} label={BADGE[status].label} />
+  </div>
 
+  {(live || repo) && (
+    <p style="display: flex; gap: 12px; flex-wrap: wrap; margin: 0 0 16px;">
+      {live && (
+        <a class="btn" href={live}>
+          <Icon name="lucide:external-link" /> Open live site
+        </a>
+      )}
+      {repo && (
+        <a class="btn-secondary" href={repo}>
+          <Icon name="lucide:github" /> Source
+        </a>
+      )}
+    </p>
+  )}
+
+  <div class="card">
+    <dl class="summary-grid">
+      <dt>Status</dt>
+      <dd>{BADGE[status].label}</dd>
+      <dt>Shipped</dt>
+      <dd>{fmt(date)}</dd>
+      <dt>Stack</dt>
+      <dd>{stack.join(' · ')}</dd>
+      {live && (
+        <>
+          <dt>Live</dt>
+          <dd><a href={live}>{live.replace('https://', '')}</a></dd>
+        </>
+      )}
+      {repo && (
+        <>
+          <dt>Source</dt>
+          <dd><a href={repo}>{repo.replace('https://github.com/', '')}</a></dd>
+        </>
+      )}
+    </dl>
+  </div>
+
+  <div class="card">
     <div class="prose">
       <Content />
     </div>

@@ -1,11 +1,11 @@
 ---
-import '@fontsource-variable/archivo';
-import '@fontsource/ibm-plex-sans/400.css';
-import '@fontsource/ibm-plex-sans/500.css';
-import '@fontsource/ibm-plex-mono/400.css';
-import '@fontsource/ibm-plex-mono/500.css';
+import '@fontsource-variable/geist';
+import '@fontsource-variable/bricolage-grotesque';
+import '@fontsource-variable/jetbrains-mono';
 import '../styles/global.css';
 import { Icon } from 'astro-icon/components';
+import Brand from '../components/Brand.astro';
+import NavLinks from '../components/NavLinks.astro';
 import Sidebar from '../components/Sidebar.astro';
 
 interface Props {
@@ -30,44 +30,46 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:type" content="website" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f6ee" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141813" />
-    <script is:inline>
-      (function () {
-        try {
-          var t = localStorage.getItem('theme');
-          if (t === 'light' || t === 'dark') {
-            document.documentElement.setAttribute('data-theme', t);
-          }
-        } catch (e) {}
-      })();
-    </script>
+    <meta name="theme-color" content="#f6f6fb" />
   </head>
   <body>
-    <a class="skip-link" href="#content">skip to content</a>
+    <div class="aurora" aria-hidden="true"></div>
+    <a class="skip-link" href="#content">Skip to content</a>
 
-    <header class="topbar">
-      <span class="wordmark">HARI PRATHAP</span>
-      <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="sidebar">
-        <Icon name="ph:list" aria-hidden="true" />
-        menu
-      </button>
-    </header>
+    <div class="app-shell">
+      <header class="mobile-topbar">
+        <Brand />
+        <button class="icon-btn" id="menu-btn" aria-expanded="false" aria-controls="mobile-drawer" aria-label="Open menu">
+          <Icon name="lucide:menu" />
+        </button>
+      </header>
 
-    <div class="shell">
       <Sidebar />
-      <main class="content" id="content">
-        <slot />
+
+      <main class="app-main" id="content">
+        <div class="page-fade">
+          <slot />
+        </div>
       </main>
     </div>
 
-    <button class="drawer-backdrop" id="drawer-backdrop" aria-label="Close menu" tabindex="-1"></button>
+    <button class="dialog-overlay" id="drawer-backdrop" aria-label="Close menu" tabindex="-1"></button>
+    <div class="mobile-drawer" id="mobile-drawer">
+      <div class="mobile-drawer-head">
+        <p class="mobile-drawer-title">Menu</p>
+        <button class="icon-btn" id="drawer-close" aria-label="Close menu">
+          <Icon name="lucide:x" />
+        </button>
+      </div>
+      <NavLinks />
+    </div>
 
     <script is:inline>
       (function () {
         var html = document.documentElement;
         var btn = document.getElementById('menu-btn');
         var backdrop = document.getElementById('drawer-backdrop');
+        var close = document.getElementById('drawer-close');
         if (!btn) return;
         function setOpen(open) {
           if (open) html.setAttribute('data-drawer', 'open');
@@ -78,6 +80,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           setOpen(html.getAttribute('data-drawer') !== 'open');
         });
         if (backdrop) backdrop.addEventListener('click', function () { setOpen(false); });
+        if (close) close.addEventListener('click', function () { setOpen(false); });
         document.addEventListener('keydown', function (e) {
           if (e.key === 'Escape') setOpen(false);
         });

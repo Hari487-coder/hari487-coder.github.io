@@ -1,0 +1,34 @@
+---
+import StatusBadge from './StatusBadge.astro';
+
+interface Props {
+  title: string;
+  href?: string;
+  sub: string;
+  due: string;
+  dueHot?: boolean;
+  state: 'todo' | 'doing' | 'done' | 'overdue';
+}
+
+const { title, href, sub, due, dueHot = false, state } = Astro.props;
+
+const BADGE = {
+  todo: { tone: 'neutral', label: 'To do' },
+  doing: { tone: 'warning', label: 'In progress' },
+  done: { tone: 'good', label: 'Done' },
+  overdue: { tone: 'critical', label: 'Overdue' },
+} as const;
+
+const badge = BADGE[state];
+---
+
+<li class:list={[{ 'row-done': state === 'done' }]}>
+  <div class="row-main">
+    {href ? <a class="row-title" href={href}>{title}</a> : <span class="row-title">{title}</span>}
+    <div class="row-sub">{sub}</div>
+  </div>
+  <div class="row-side">
+    <span class:list={['row-due', { 'due-hot': dueHot }]}>{due}</span>
+    <StatusBadge tone={badge.tone} label={badge.label} />
+  </div>
+</li>

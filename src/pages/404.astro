@@ -1,15 +1,14 @@
 ---
+import { Icon } from 'astro-icon/components';
 import Base from '../layouts/Base.astro';
-import { stamp, todayIST } from '../lib/dates';
-
-const today = todayIST();
 ---
 
-<Base title="Not found" description="This page is not in the ledger.">
-  <div class="ledger">
-    <p class="log-stamp">{stamp(today)} · 404</p>
-    <h1 class="page-title">Not logged</h1>
-    <p class="page-sub">no entry at this address. the ledger has no page here.</p>
-    <p class="empty"><a href="/">back to today's page</a></p>
+<Base title="Not found" description="This page does not exist.">
+  <div class="card" style="margin-top: 24px;">
+    <div class="empty-state">
+      <span class="empty-icon"><Icon name="lucide:compass" /></span>
+      <p>There is no page at this address.</p>
+      <a class="btn" href="/">Back to the dashboard</a>
+    </div>
   </div>
 </Base>

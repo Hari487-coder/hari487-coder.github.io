@@ -3,6 +3,7 @@ title: Attribution Bridge
 summary: Compliance-safe lead mover for a CRM, replaces manual contact copying with API creates that preserve consent attribution.
 stack: [Node.js, Express, Render]
 status: live
+icon: lucide:git-branch
 date: 2026-07-10
 ---
 

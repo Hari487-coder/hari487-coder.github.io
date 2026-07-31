@@ -7,6 +7,7 @@ date: 2026-07-14
 repo: https://github.com/Hari487-coder/assistable-media-bridge
 live: https://hari487-coder.github.io/assistable-media-bridge/
 featured: true
+icon: lucide:image
 ---
 
 Assistable's AI assistants could not send media. Conversations that needed a menu photo, a

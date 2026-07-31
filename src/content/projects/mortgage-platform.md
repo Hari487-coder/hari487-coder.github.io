@@ -5,6 +5,7 @@ stack: [TypeScript, Next.js, Fastify, PostgreSQL, Prisma, Docker, nginx]
 status: live
 date: 2026-07-28
 featured: true
+icon: lucide:landmark
 ---
 
 New-mortgage public records are a strong signal for insurance outreach, but they arrive as

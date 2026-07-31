@@ -1,0 +1,42 @@
+---
+import { Icon } from 'astro-icon/components';
+
+const path = Astro.url.pathname;
+
+const workspace = [
+  { href: '/', label: 'Home', icon: 'lucide:layout-dashboard', match: (p: string) => p === '/' },
+  { href: '/projects/', label: 'Projects', icon: 'lucide:wrench', match: (p: string) => p.startsWith('/projects') },
+  { href: '/about/', label: 'About', icon: 'lucide:user', match: (p: string) => p.startsWith('/about') },
+];
+
+const iith = [
+  { href: '/iith/', label: 'Courses', icon: 'lucide:graduation-cap', match: (p: string) => p === '/iith/' || p.startsWith('/iith/courses') },
+  { href: '/iith/assignments/', label: 'Assignments', icon: 'lucide:list-checks', match: (p: string) => p.startsWith('/iith/assignments') },
+];
+---
+
+<nav class="sidebar-nav" aria-label="Main">
+  <p class="sidebar-section-label">Workspace</p>
+  {workspace.map(({ href, label, icon, match }) => (
+    <a href={href} class:list={['sidebar-link', { active: match(path) }]} aria-current={match(path) ? 'page' : undefined}>
+      <Icon name={icon} />
+      {label}
+    </a>
+  ))}
+
+  <p class="sidebar-section-label">IITH</p>
+  {iith.map(({ href, label, icon, match }) => (
+    <a href={href} class:list={['sidebar-link', { active: match(path) }]} aria-current={match(path) ? 'page' : undefined}>
+      <Icon name={icon} />
+      {label}
+    </a>
+  ))}
+</nav>
+
+<div class="sidebar-footer">
+  <a class="sidebar-account" href="https://github.com/Hari487-coder">
+    <span class="avatar">HP</span>
+    <span class="sidebar-account-email">github.com/Hari487-coder</span>
+    <Icon name="lucide:github" style="width:14px;height:14px;flex-shrink:0;" />
+  </a>
+</div>

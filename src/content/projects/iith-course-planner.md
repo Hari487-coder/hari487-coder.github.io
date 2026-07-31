@@ -3,6 +3,7 @@ title: IITH Course Planner
 summary: Single-file registration planner for the EM M.Tech, pick courses, see your week, catch slot clashes before the portal does.
 stack: [JavaScript, HTML, CSS]
 status: building
+icon: lucide:calendar-days
 date: 2026-07-20
 ---
 

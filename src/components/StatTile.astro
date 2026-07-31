@@ -1,0 +1,23 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+  icon: string;
+  value: string | number;
+  label: string;
+  tone?: 'accent' | 'good' | 'warning' | 'critical';
+  href?: string;
+}
+
+const { icon, value, label, tone = 'accent', href } = Astro.props;
+const iconCls = tone === 'accent' ? 'stat-tile-icon' : `stat-tile-icon tone-${tone}`;
+const Tag = href ? 'a' : 'div';
+---
+
+<Tag class:list={['card', 'stat-tile', { 'card-interactive': !!href }]} href={href}>
+  <span class={iconCls}><Icon name={icon} /></span>
+  <span>
+    <span class="meta">{label}</span>
+    <span class="stat-tile-value" style="display:block">{value}</span>
+  </span>
+</Tag>

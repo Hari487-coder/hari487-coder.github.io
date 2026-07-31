@@ -3,6 +3,7 @@ title: Support Copilot
 summary: Zero-cost agent-assist chat that answers support questions from resolved tickets and docs, no LLM API required.
 stack: [Python, Flask, BM25]
 status: parked
+icon: lucide:message-square
 date: 2026-05-28
 ---
 

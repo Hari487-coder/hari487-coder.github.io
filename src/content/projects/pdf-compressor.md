@@ -7,6 +7,7 @@ date: 2026-05-20
 repo: https://github.com/hari487-coder/pdf-compressor
 live: https://hari487-coder.github.io/pdf-compressor/
 featured: true
+icon: lucide:file-down
 ---
 
 IITH's application portal caps PDF uploads hard, and every online compressor wants your

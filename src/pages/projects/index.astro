@@ -1,27 +1,28 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import ProjectEntry from '../../components/ProjectEntry.astro';
-import { stamp, todayIST } from '../../lib/dates';
+import ProjectCard from '../../components/ProjectCard.astro';
 
-const today = todayIST();
 const projects = (await getCollection('projects')).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime(),
 );
 const liveCount = projects.filter((p) => p.data.status === 'live').length;
 ---
 
-<Base title="Projects" description="Every build in the ledger: platforms, bridges, tools, experiments.">
-  <div class="ledger">
-    <p class="log-stamp">{stamp(today)} · {projects.length} BUILDS · {liveCount} LIVE</p>
-    <h1 class="page-title">Projects</h1>
-    <p class="page-sub">every build gets an entry. live, building, parked: all logged.</p>
-
-    <h2>The ledger</h2>
-    <div class="stagger">
-      {projects.map((p) => (
-        <ProjectEntry project={p} />
-      ))}
+<Base title="Projects" description="Every build: platforms, bridges, tools, experiments.">
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">{projects.length} builds · {liveCount} live</p>
+      <h1>Projects</h1>
+      <p class="subtitle">
+        Every build gets an entry. Live, building, or parked, it all counts.
+      </p>
     </div>
+  </div>
+
+  <div class="market-grid">
+    {projects.map((p) => (
+      <ProjectCard project={p} />
+    ))}
   </div>
 </Base>

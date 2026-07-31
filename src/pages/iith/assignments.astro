@@ -1,8 +1,9 @@
 ---
 import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
 import Base from '../../layouts/Base.astro';
-import LedgerRow from '../../components/LedgerRow.astro';
-import { burnPercent, daysLeft, fmt, isOverdue, stamp, todayIST } from '../../lib/dates';
+import AssignmentRow from '../../components/AssignmentRow.astro';
+import { daysLeft, fmt, isOverdue, todayIST } from '../../lib/dates';
 
 const today = todayIST();
 const courses = await getCollection('courses');
@@ -20,19 +21,16 @@ const done = assignments
   .filter((a) => a.data.status === 'done')
   .sort((a, b) => b.data.due.getTime() - a.data.due.getTime());
 
-const open = doing.length + todo.length;
-
-function row(a: (typeof assignments)[number]) {
+function rowProps(a: (typeof assignments)[number]) {
   const course = courseById.get(a.data.course.id);
   const isDone = a.data.status === 'done';
   const overdue = !isDone && isOverdue(a.data.due, today);
   return {
     title: a.data.title,
     href: course ? `/iith/courses/${course.id}/` : undefined,
-    meta: [course?.data.code ?? a.data.course.id],
+    sub: course ? `${course.data.code} · ${course.data.name}` : a.data.course.id,
     due: fmt(a.data.due),
     dueHot: overdue || (!isDone && daysLeft(a.data.due, today) <= 2),
-    burn: burnPercent(a.data.due, a.data.start, today),
     state: (isDone ? 'done' : overdue ? 'overdue' : a.data.status) as
       | 'todo'
       | 'doing'
@@ -40,30 +38,41 @@ function row(a: (typeof assignments)[number]) {
       | 'overdue',
   };
 }
+
+const groups = [
+  { title: 'In progress', items: doing, empty: 'Nothing in progress right now.' },
+  { title: 'To do', items: todo, empty: 'The queue is empty.' },
+  { title: 'Done', items: done, empty: 'Nothing cleared yet.' },
+];
 ---
 
 <Base title="Assignments" description="Every assignment across all IITH courses, by status.">
-  <div class="ledger">
-    <p class="log-stamp">{stamp(today)} · ASSIGNMENTS · {open} OPEN</p>
-    <h1 class="page-title">Assignments</h1>
-    <p class="page-sub">everything owed, everything cleared.</p>
-
-    <h2>In progress</h2>
-    {doing.length === 0 && <p class="empty">nothing in progress. logged.</p>}
-    <div class="stagger">
-      {doing.map((a) => <LedgerRow {...row(a)} tick />)}
-    </div>
-
-    <h2>To do</h2>
-    {todo.length === 0 && <p class="empty">queue empty. logged.</p>}
-    <div class="stagger">
-      {todo.map((a) => <LedgerRow {...row(a)} tick />)}
-    </div>
-
-    <h2>Done</h2>
-    {done.length === 0 && <p class="empty">nothing cleared yet.</p>}
-    <div class="stagger">
-      {done.map((a) => <LedgerRow {...row(a)} />)}
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">IIT Hyderabad</p>
+      <h1>Assignments</h1>
+      <p class="subtitle">Everything owed and everything cleared, across all courses.</p>
     </div>
   </div>
+
+  {groups.map(({ title, items, empty }) => (
+    <section class="section">
+      <div class="section-head">
+        <h2>{title}</h2>
+        <span class="meta">{items.length}</span>
+      </div>
+      <div class="card">
+        {items.length === 0 ? (
+          <div class="empty-state" style="padding: 28px 24px;">
+            <span class="empty-icon"><Icon name="lucide:inbox" /></span>
+            <p>{empty}</p>
+          </div>
+        ) : (
+          <ul class="row-list" style="margin-top: 0;">
+            {items.map((a) => <AssignmentRow {...rowProps(a)} />)}
+          </ul>
+        )}
+      </div>
+    </section>
+  ))}
 </Base>

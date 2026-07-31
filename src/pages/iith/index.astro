@@ -1,10 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import LedgerRow from '../../components/LedgerRow.astro';
-import { stamp, todayIST } from '../../lib/dates';
+import StatusBadge from '../../components/StatusBadge.astro';
 
-const today = todayIST();
 const courses = await getCollection('courses');
 
 const semesters = [...new Set(courses.map((c) => c.data.semester))].sort((a, b) => a - b);
@@ -14,30 +12,47 @@ const bySemester = semesters.map((s) => {
     .sort((a, b) => a.data.code.localeCompare(b.data.code));
   return { semester: s, list, credits: list.reduce((sum, c) => sum + c.data.credits, 0) };
 });
+
+const COURSE_BADGE = {
+  ongoing: { tone: 'good', label: 'In session' },
+  done: { tone: 'neutral', label: 'Completed' },
+  planned: { tone: 'accent', label: 'Planned' },
+} as const;
 ---
 
 <Base title="Courses" description="IITH coursework: every course in the M.Tech, semester by semester.">
-  <div class="ledger">
-    <p class="log-stamp">{stamp(today)} · IITH · {courses.length} COURSES</p>
-    <h1 class="page-title">Courses</h1>
-    <p class="page-sub">M.Tech Techno-Entrepreneurship, IIT Hyderabad. Jul 2026 onward.</p>
-
-    {bySemester.map(({ semester, list, credits }) => (
-      <>
-        <h2>Semester {semester}</h2>
-        <div class="stagger">
-          {list.map((c) => (
-            <LedgerRow
-              title={c.data.name}
-              href={`/iith/courses/${c.id}/`}
-              meta={[c.data.code, ...(c.data.slot ? [`slot ${c.data.slot}`] : []), c.data.status]}
-              note={`${c.data.credits} credits${c.data.instructor ? ` · ${c.data.instructor}` : ''}`}
-              state={c.data.status === 'done' ? 'done' : 'doing'}
-            />
-          ))}
-        </div>
-        <p class="empty">{credits} credits this semester</p>
-      </>
-    ))}
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">IIT Hyderabad</p>
+      <h1>Courses</h1>
+      <p class="subtitle">M.Tech Techno-Entrepreneurship, July 2026 onward.</p>
+    </div>
   </div>
+
+  {bySemester.map(({ semester, list, credits }) => (
+    <section class="section">
+      <div class="section-head">
+        <h2>Semester {semester}</h2>
+        <span class="meta">{credits} credits</span>
+      </div>
+      <div class="card">
+        <ul class="row-list" style="margin-top: 0;">
+          {list.map((c) => (
+            <li>
+              <div class="row-main">
+                <a class="row-title" href={`/iith/courses/${c.id}/`}>{c.data.name}</a>
+                <div class="row-sub">
+                  {c.data.code}{c.data.slot ? ` · Slot ${c.data.slot}` : ''} · {c.data.credits} credits
+                  {c.data.instructor ? ` · ${c.data.instructor}` : ''}
+                </div>
+              </div>
+              <div class="row-side">
+                <StatusBadge tone={COURSE_BADGE[c.data.status].tone} label={COURSE_BADGE[c.data.status].label} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  ))}
 </Base>

@@ -37,6 +37,7 @@ const projects = defineCollection({
     repo: z.string().url().optional(),
     live: z.string().url().optional(),
     featured: z.boolean().default(false),
+    icon: z.string().default('lucide:box'),
   }),
 });
 

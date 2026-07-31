@@ -5,6 +5,7 @@ stack: [Python, DuckDB, Flask, GitHub Actions]
 status: internal
 date: 2026-06-15
 featured: true
+icon: lucide:database
 ---
 
 An AI startup's support signal was scattered across a ticketing tool, Discord, email, and

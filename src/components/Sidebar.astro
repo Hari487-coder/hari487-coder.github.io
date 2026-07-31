@@ -1,45 +1,9 @@
 ---
-import { Icon } from 'astro-icon/components';
-import ThemeToggle from './ThemeToggle.astro';
-import { fmt, todayIST } from '../lib/dates';
-
-const path = Astro.url.pathname;
-
-const items = [
-  { href: '/', label: 'home', icon: 'ph:notebook' },
-  { href: '/iith/', label: 'courses', icon: 'ph:graduation-cap' },
-  { href: '/iith/assignments/', label: 'assignments', icon: 'ph:list-checks' },
-  { href: '/projects/', label: 'projects', icon: 'ph:wrench' },
-  { href: '/about/', label: 'about', icon: 'ph:user' },
-];
-
-function isActive(href: string): boolean {
-  if (href === '/') return path === '/';
-  if (href === '/iith/') return path === '/iith/' || path.startsWith('/iith/courses/');
-  return path.startsWith(href);
-}
-
-const built = fmt(todayIST());
+import Brand from './Brand.astro';
+import NavLinks from './NavLinks.astro';
 ---
 
-<aside class="sidebar" id="sidebar">
-  <div class="id-block">
-    <div class="wordmark">HARI PRATHAP</div>
-    <div class="role">IITH / Assistable AI</div>
-    <div class="built mono">built {built}</div>
-  </div>
-
-  <nav class="side-nav" aria-label="Main">
-    {items.map((item) => (
-      <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
-        <Icon name={item.icon} />
-        {item.label}
-      </a>
-    ))}
-  </nav>
-
-  <div class="side-foot">
-    <ThemeToggle />
-    <a class="mono" href="https://github.com/Hari487-coder">github.com/Hari487-coder</a>
-  </div>
+<aside class="sidebar">
+  <Brand />
+  <NavLinks />
 </aside>

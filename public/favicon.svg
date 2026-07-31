@@ -1,7 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#F3F6EE" stroke="#D9E0D3" stroke-width="1"/>
-  <rect x="9" y="5" width="2" height="22" fill="#BC4708"/>
-  <rect x="14" y="9" width="12" height="2" rx="1" fill="#5C665E"/>
-  <rect x="14" y="15" width="9" height="2" rx="1" fill="#5C665E" opacity="0.55"/>
-  <rect x="14" y="21" width="11" height="2" rx="1" fill="#5C665E" opacity="0.55"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6b6af2"/>
+      <stop offset="1" stop-color="#9d8bfa"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="10" fill="url(#g)"/>
+  <rect x="8" y="9" width="16" height="2.5" rx="1.25" fill="#ffffff"/>
+  <rect x="8" y="15" width="12" height="2.5" rx="1.25" fill="#ffffff" opacity="0.85"/>
+  <rect x="8" y="21" width="14" height="2.5" rx="1.25" fill="#ffffff" opacity="0.7"/>
 </svg>

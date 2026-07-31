@@ -1,9 +1,12 @@
 ---
 import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
 import Base from '../layouts/Base.astro';
-import LedgerRow from '../components/LedgerRow.astro';
-import ProjectEntry from '../components/ProjectEntry.astro';
-import { burnPercent, daysLeft, fmt, isDueSoon, isOverdue, stamp, todayIST } from '../lib/dates';
+import AssignmentRow from '../components/AssignmentRow.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import StatTile from '../components/StatTile.astro';
+import StatusBadge from '../components/StatusBadge.astro';
+import { daysLeft, fmt, isDueSoon, isOverdue, stamp, todayIST } from '../lib/dates';
 
 const today = todayIST();
 
@@ -11,69 +14,111 @@ const courses = await getCollection('courses');
 const ongoing = courses
   .filter((c) => c.data.status === 'ongoing')
   .sort((a, b) => a.data.code.localeCompare(b.data.code));
+const courseById = new Map(courses.map((c) => [c.id, c]));
+const semester = Math.max(...courses.map((c) => c.data.semester));
 
 const assignments = await getCollection('assignments');
-const dueSoon = assignments
-  .filter((a) => a.data.status !== 'done' && isDueSoon(a.data.due, today))
+const open = assignments.filter((a) => a.data.status !== 'done');
+const dueSoon = open
+  .filter((a) => isDueSoon(a.data.due, today))
   .sort((a, b) => a.data.due.getTime() - b.data.due.getTime());
 
-const projects = (await getCollection('projects'))
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
-  .slice(0, 4);
-
-const semester = Math.max(...courses.map((c) => c.data.semester));
-const courseById = new Map(courses.map((c) => [c.id, c]));
+const projects = (await getCollection('projects')).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+const liveCount = projects.filter((p) => p.data.status === 'live').length;
 ---
 
 <Base
   title="Home"
-  description="Hari Prathap's ledger: IITH coursework, assignments, and everything he ships."
+  description="Hari Prathap's command center: IITH coursework, assignments, and everything he ships."
 >
-  <div class="ledger">
-    <p class="log-stamp">{stamp(today)} · SEM {semester} · {dueSoon.length} DUE</p>
-    <h1 class="page-title">The ledger</h1>
-    <p class="page-sub">what is due, what is in session, what shipped.</p>
-
-    <h2>Due soon</h2>
-    {dueSoon.length === 0 && <p class="empty">nothing due this week. logged.</p>}
-    <div class="stagger">
-      {dueSoon.map((a) => {
-        const course = courseById.get(a.data.course.id);
-        const overdue = isOverdue(a.data.due, today);
-        return (
-          <LedgerRow
-            title={a.data.title}
-            href={course ? `/iith/courses/${course.id}/` : undefined}
-            meta={[course?.data.code ?? a.data.course.id]}
-            due={fmt(a.data.due)}
-            dueHot={overdue || daysLeft(a.data.due, today) <= 2}
-            burn={burnPercent(a.data.due, a.data.start, today)}
-            state={overdue ? 'overdue' : a.data.status === 'doing' ? 'doing' : 'todo'}
-            note={a.data.status === 'doing' ? 'in progress' : undefined}
-            tick
-          />
-        );
-      })}
-    </div>
-
-    <h2>Currently taking</h2>
-    <div class="stagger">
-      {ongoing.map((c) => (
-        <LedgerRow
-          title={c.data.name}
-          href={`/iith/courses/${c.id}/`}
-          meta={[c.data.code, ...(c.data.slot ? [`slot ${c.data.slot}`] : [])]}
-          note={`${c.data.credits} credits`}
-          state="doing"
-        />
-      ))}
-    </div>
-
-    <h2>Recently shipped</h2>
-    <div class="stagger">
-      {projects.map((p) => (
-        <ProjectEntry project={p} />
-      ))}
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">{stamp(today)} · Semester {semester}</p>
+      <h1>Good day, Hari.</h1>
+      <p class="subtitle">What is due, what is in session, and what shipped.</p>
     </div>
   </div>
+
+  <div class="stat-grid">
+    <StatTile
+      icon="lucide:calendar-clock"
+      value={dueSoon.length}
+      label="Due this week"
+      tone={dueSoon.length > 0 ? 'warning' : 'good'}
+      href="/iith/assignments/"
+    />
+    <StatTile icon="lucide:list-checks" value={open.length} label="Open assignments" href="/iith/assignments/" />
+    <StatTile icon="lucide:graduation-cap" value={ongoing.length} label="Courses in session" href="/iith/" />
+    <StatTile icon="lucide:rocket" value={liveCount} label="Builds live" tone="good" href="/projects/" />
+  </div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Due soon</h2>
+      <a class="section-link" href="/iith/assignments/">All assignments <Icon name="lucide:arrow-right" /></a>
+    </div>
+    <div class="card">
+      {dueSoon.length === 0 ? (
+        <div class="empty-state">
+          <span class="empty-icon"><Icon name="lucide:coffee" /></span>
+          <p>Nothing due this week. Enjoy the slack.</p>
+        </div>
+      ) : (
+        <ul class="row-list" style="margin-top: 0;">
+          {dueSoon.map((a) => {
+            const course = courseById.get(a.data.course.id);
+            const overdue = isOverdue(a.data.due, today);
+            return (
+              <AssignmentRow
+                title={a.data.title}
+                href={course ? `/iith/courses/${course.id}/` : undefined}
+                sub={course ? `${course.data.code} · ${course.data.name}` : a.data.course.id}
+                due={fmt(a.data.due)}
+                dueHot={overdue || daysLeft(a.data.due, today) <= 2}
+                state={overdue ? 'overdue' : a.data.status === 'doing' ? 'doing' : 'todo'}
+              />
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Currently taking</h2>
+      <a class="section-link" href="/iith/">All courses <Icon name="lucide:arrow-right" /></a>
+    </div>
+    <div class="card">
+      <ul class="row-list" style="margin-top: 0;">
+        {ongoing.map((c) => (
+          <li>
+            <div class="row-main">
+              <a class="row-title" href={`/iith/courses/${c.id}/`}>{c.data.name}</a>
+              <div class="row-sub">
+                {c.data.code}{c.data.slot ? ` · Slot ${c.data.slot}` : ''} · {c.data.credits} credits
+              </div>
+            </div>
+            <div class="row-side">
+              <StatusBadge tone="good" label="In session" />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Recently shipped</h2>
+      <a class="section-link" href="/projects/">All projects <Icon name="lucide:arrow-right" /></a>
+    </div>
+    <div class="market-grid">
+      {projects.slice(0, 4).map((p) => (
+        <ProjectCard project={p} />
+      ))}
+    </div>
+  </section>
 </Base>

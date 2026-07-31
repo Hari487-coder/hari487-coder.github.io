@@ -1,25 +1,18 @@
 ---
+import { Icon } from 'astro-icon/components';
 import Base from '../layouts/Base.astro';
-import { stamp, todayIST } from '../lib/dates';
-
-const today = todayIST();
 ---
 
-<Base title="About" description="Who keeps this ledger: Hari Prathap, IITH M.Tech student and customer success engineer.">
-  <div class="ledger">
-    <p class="log-stamp">{stamp(today)} · ABOUT</p>
-    <h1 class="page-title">About</h1>
-
-    <div class="lrow">
-      <div class="gutter facts">
-        <span>Hyderabad, IN</span>
-        <span><a href="https://github.com/Hari487-coder">github</a></span>
-      </div>
-      <div class="entry">
-        <div class="note">student, engineer, keeper of this ledger</div>
-      </div>
+<Base title="About" description="Who runs this: Hari Prathap, IITH M.Tech student and customer success engineer.">
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">Hyderabad, India</p>
+      <h1>About</h1>
+      <p class="subtitle">Student, engineer, and keeper of this dashboard.</p>
     </div>
+  </div>
 
+  <div class="card">
     <div class="prose">
       <p>
         I am doing an M.Tech in Techno-Entrepreneurship at IIT Hyderabad and working
@@ -33,10 +26,16 @@ const today = todayIST();
         what I learn comes from shipping something real and watching where it breaks.
       </p>
       <p>
-        This site is the ledger I actually keep. Assignments, courses, and builds go in
-        as entries; the software just turns the pages. If something here is useful to
-        you, take it.
+        This site is the dashboard I actually use. Assignments, courses, and builds go
+        in as entries; the software keeps the score. If something here is useful to you,
+        take it.
       </p>
     </div>
   </div>
+
+  <p style="display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0 0;">
+    <a class="btn-secondary" href="https://github.com/Hari487-coder">
+      <Icon name="lucide:github" /> github.com/Hari487-coder
+    </a>
+  </p>
 </Base>

@@ -74,20 +74,28 @@ one honest lesson. No client names. No marketing adjectives.
   configure DNS (A records to GitHub Pages IPs or CNAME to hari487-coder.github.io),
   then set the domain in repo Settings > Pages. Nothing else changes.
 
-## Design guardrails (Eye-Ease Ledger; do not drift)
+## Design guardrails (Daybreak; do not drift)
 
-- Tokens in `src/styles/global.css` are IMMUTABLE: the palette (eye-ease paper, graphite
-  ink, surveyor orange), one accent only, no new colors, no serif fonts ever.
-- ZERO em/en dashes in visible text. Hyphens only. (CI-adjacent check: search dist.)
-- Copy voice: terse field log. Sentence-case plain-noun headings. Exactly one uppercase
-  element per page: the mono log stamp. Empty states are logbook entries
-  ("nothing due this week. logged.").
-- IBM Plex Mono is fenced to DATA (dates, codes, statuses, nav, gutter metadata),
-  never prose. Archivo for titles only.
-- Phosphor icons via astro-icon only; never emoji-as-icon.
-- All motion behind prefers-reduced-motion; only transform/opacity animate.
-- Accent has two duties: fill (rule, ticks, fuses, 3:1) and text (links, due dates,
-  4.5:1+). Both verified in both modes; keep it that way.
+The design system is "Daybreak", ported VERBATIM from the mortgage-platform web app
+(`mortgage-platform/apps/web/app/globals.css` is the upstream source of truth). If the
+platform's design evolves and Hari wants parity, re-port tokens from there.
+
+- Tokens in `src/styles/global.css` are IMMUTABLE: lavender-white surfaces (#f6f6fb page,
+  white cards), one iris accent (#5857d6 family), ink-pill buttons, dawn aurora backdrop.
+  Never hand-write a hex in a page; add or reuse a token.
+- Light only, by design (matches the platform). No dark mode, no theme toggle.
+- Fonts: Geist (UI/body), Bricolage Grotesque (display: h1, card h2, big numbers),
+  JetBrains Mono (data: dates, codes, stacks). Never a serif.
+- Icons: lucide via astro-icon (`lucide:*`); never emoji-as-icon. Project cards take an
+  `icon` frontmatter field (lucide name).
+- Components: .card / .card-interactive, .badge (good/warning/critical/accent + dot),
+  .stat-tile, .market-grid + .market-card (projects), .row-list rows, .page-head with
+  .eyebrow + h1 + .subtitle, .empty-state. Reuse these; do not invent parallel ones.
+- ZERO em/en dashes in visible text. Hyphens only. (Check: search dist for the chars.)
+- All motion behind prefers-reduced-motion (global 0.001ms override matches platform).
+- Known inherited contrast margins (platform-shipped, kept for fidelity): warning/critical
+  badge tints and dim sidebar section labels sit slightly under 4.5:1. Do not "fix" them
+  without also changing the platform; parity wins here.
 
 ## Commands
 
