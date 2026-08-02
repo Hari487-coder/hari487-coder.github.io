@@ -1,0 +1,39 @@
+---
+import { backlinksFor, type NodeKind } from '../lib/links';
+
+interface Props {
+  kind: NodeKind;
+  id: string;
+}
+
+const { kind, id } = Astro.props;
+const links = await backlinksFor(kind, id);
+
+const LABEL: Record<NodeKind, string> = {
+  course: 'Course',
+  note: 'Lecture notes',
+  assignment: 'Assignment',
+  project: 'Project',
+};
+---
+
+{links.length > 0 && (
+  <section class="section">
+    <div class="section-head">
+      <h2>Linked from</h2>
+      <span class="meta">{links.length}</span>
+    </div>
+    <div class="card">
+      <ul class="row-list" style="margin-top: 0;">
+        {links.map((link) => (
+          <li>
+            <div class="row-main">
+              <a class="row-title" href={link.href}>{link.label}</a>
+              <div class="row-sub">{LABEL[link.kind]}</div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+)}

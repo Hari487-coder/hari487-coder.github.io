@@ -869,6 +869,24 @@ a.row-title:hover {
   text-decoration: underline;
 }
 
+/* Wikilinks: resolved links are accent-bordered, unresolved ones stay visible
+   but muted (the Obsidian convention: the link exists, the page does not yet). */
+.wikilink {
+  color: var(--accent-strong);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-tint-border);
+}
+.wikilink:hover {
+  border-bottom-color: var(--accent);
+  text-decoration: none;
+}
+.wikilink-missing {
+  color: var(--text-muted);
+  border-bottom: 1px dashed var(--border-strong);
+  cursor: help;
+}
+
 /* ---------- Empty state ---------- */
 .empty-state {
   display: flex;

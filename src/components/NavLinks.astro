@@ -6,6 +6,7 @@ const path = Astro.url.pathname;
 const workspace = [
   { href: '/', label: 'Home', icon: 'lucide:layout-dashboard', match: (p: string) => p === '/' },
   { href: '/projects/', label: 'Projects', icon: 'lucide:wrench', match: (p: string) => p.startsWith('/projects') },
+  { href: '/graph/', label: 'Graph', icon: 'lucide:share-2', match: (p: string) => p.startsWith('/graph') },
   { href: '/about/', label: 'About', icon: 'lucide:user', match: (p: string) => p.startsWith('/about') },
 ];
 

@@ -2,6 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Base from '../../layouts/Base.astro';
+import Backlinks from '../../components/Backlinks.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
 import { fmt } from '../../lib/dates';
 
@@ -75,4 +76,6 @@ const BADGE = {
       <Content />
     </div>
   </div>
+
+  <Backlinks kind="project" id={project.id} />
 </Base>

@@ -1,0 +1,483 @@
+---
+import Base from '../layouts/Base.astro';
+import { linkIndex } from '../lib/links';
+
+const { nodes, edges } = await linkIndex();
+
+const counts = {
+  course: nodes.filter((n) => n.kind === 'course').length,
+  note: nodes.filter((n) => n.kind === 'note').length,
+  assignment: nodes.filter((n) => n.kind === 'assignment').length,
+  project: nodes.filter((n) => n.kind === 'project').length,
+};
+
+const wikilinkCount = edges.filter((e) => e.kind === 'wikilink').length;
+---
+
+<Base
+  title="Graph"
+  description="The whole life hub as a linked graph: courses, lecture notes, assignments, and projects."
+>
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">{nodes.length} nodes · {edges.length} links</p>
+      <h1>Graph</h1>
+      <p class="subtitle">
+        Everything here and how it connects. Courses pull in their notes and assignments;
+        anything can reference anything else with wikilinks.
+      </p>
+    </div>
+  </div>
+
+  <div class="card graph-card">
+    <div class="graph-controls">
+      <div class="chips">
+        <button class="chip on" data-kind="course"><span class="swatch course"></span>Courses <b>{counts.course}</b></button>
+        <button class="chip on" data-kind="note"><span class="swatch note"></span>Notes <b>{counts.note}</b></button>
+        <button class="chip on" data-kind="assignment"><span class="swatch assignment"></span>Assignments <b>{counts.assignment}</b></button>
+        <button class="chip on" data-kind="project"><span class="swatch project"></span>Projects <b>{counts.project}</b></button>
+      </div>
+      <input id="graph-search" type="search" placeholder="Search nodes" aria-label="Search nodes" />
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="graph-canvas"></canvas>
+      <div class="graph-tip" id="graph-tip" hidden></div>
+    </div>
+    <p class="meta graph-foot">
+      Drag to rearrange, click to open. {wikilinkCount} of the links come from wikilinks
+      written in the content itself; the rest are course relationships.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-row">
+      <h2>Writing links</h2>
+    </div>
+    <div class="prose" style="margin-top: 12px;">
+      <p>
+        In any note, course, or project, write <code>[[em5090]]</code> or
+        <code>[[EM5090 lecture, 31 Jul 2026]]</code> to link to it, or
+        <code>[[em5090|the accounting course]]</code> to set your own label. Links to
+        pages that do not exist yet render greyed out, so you can plan ahead.
+      </p>
+      <p>
+        The same folder works as an Obsidian vault: open
+        <code>src/content</code> in Obsidian and you get these notes, these links, and
+        Obsidian's own graph on your laptop.
+      </p>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .graph-card {
+    padding: 20px;
+  }
+  .graph-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 13px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border);
+    background: var(--surface-sunken);
+    color: var(--text-muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .chip.on {
+    background: var(--surface);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-xs);
+  }
+  .chip b {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .swatch {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    flex: none;
+  }
+  .swatch.course { background: #5857d6; }
+  .swatch.note { background: #0c7d55; }
+  .swatch.assignment { background: #a95f0b; }
+  .swatch.project { background: #191823; }
+  #graph-search {
+    padding: 9px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    font-family: inherit;
+    background: var(--surface);
+    color: var(--text-primary);
+    min-width: 200px;
+  }
+  #graph-search:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+  .canvas-wrap {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-soft);
+    overflow: hidden;
+  }
+  #graph-canvas {
+    display: block;
+    width: 100%;
+    height: 560px;
+    touch-action: none;
+  }
+  @media (max-width: 767px) {
+    #graph-canvas { height: 420px; }
+  }
+  .graph-tip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    padding: 7px 11px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    max-width: 260px;
+  }
+  .graph-tip span {
+    display: block;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    margin-top: 2px;
+  }
+  .graph-foot {
+    margin: 12px 0 0;
+  }
+</style>
+
+<script define:vars={{ nodes, edges }}>
+  window.__graphData = { nodes, edges };
+</script>
+
+<script>
+  import {
+    forceCenter,
+    forceCollide,
+    forceLink,
+    forceManyBody,
+    forceSimulation,
+    type Simulation,
+  } from 'd3-force';
+
+  interface RawNode {
+    id: string;
+    kind: 'course' | 'note' | 'assignment' | 'project';
+    label: string;
+    sub: string;
+    href: string;
+  }
+  interface SimNode extends RawNode {
+    x?: number;
+    y?: number;
+    fx?: number | null;
+    fy?: number | null;
+    degree: number;
+  }
+  interface SimEdge {
+    source: SimNode | string;
+    target: SimNode | string;
+    kind: 'wikilink' | 'structural';
+  }
+
+  const data = (window as any).__graphData as { nodes: RawNode[]; edges: SimEdge[] };
+  const canvas = document.getElementById('graph-canvas') as HTMLCanvasElement | null;
+  const tip = document.getElementById('graph-tip') as HTMLElement | null;
+  const search = document.getElementById('graph-search') as HTMLInputElement | null;
+  if (!canvas || !tip || !search) throw new Error('graph elements missing');
+  const ctx = canvas.getContext('2d')!;
+
+  const COLORS: Record<RawNode['kind'], string> = {
+    course: '#5857d6',
+    note: '#0c7d55',
+    assignment: '#a95f0b',
+    project: '#191823',
+  };
+  const MUTED = '#8b89a4';
+  const LINE = '#dbdaec';
+
+  const degree = new Map<string, number>();
+  for (const e of data.edges) {
+    const s = typeof e.source === 'string' ? e.source : e.source.id;
+    const t = typeof e.target === 'string' ? e.target : e.target.id;
+    degree.set(s, (degree.get(s) ?? 0) + 1);
+    degree.set(t, (degree.get(t) ?? 0) + 1);
+  }
+
+  const nodes: SimNode[] = data.nodes.map((n) => ({ ...n, degree: degree.get(n.id) ?? 0 }));
+  const edges: SimEdge[] = data.edges.map((e) => ({ ...e }));
+  const radius = (n: SimNode) => 5 + Math.sqrt(n.degree) * 2.6;
+
+  const hidden = new Set<string>();
+  let hover: SimNode | null = null;
+  let dragging: SimNode | null = null;
+  let matches = new Set<string>();
+  let width = 0;
+  let height = 0;
+
+  /** Returns false when the canvas has no layout box yet (hidden tab, pane closed). */
+  function resize(): boolean {
+    const rect = canvas!.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) return false;
+    const dpr = window.devicePixelRatio || 1;
+    width = rect.width;
+    height = rect.height;
+    canvas!.width = Math.round(width * dpr);
+    canvas!.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return true;
+  }
+  resize();
+
+  const visible = (n: SimNode) => !hidden.has(n.kind);
+  const endpoint = (v: SimNode | string): SimNode =>
+    typeof v === 'string' ? nodes.find((n) => n.id === v)! : v;
+
+  function neighbors(node: SimNode): Set<string> {
+    const set = new Set<string>([node.id]);
+    for (const e of edges) {
+      const s = endpoint(e.source);
+      const t = endpoint(e.target);
+      if (s.id === node.id) set.add(t.id);
+      if (t.id === node.id) set.add(s.id);
+    }
+    return set;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    const focus = hover ? neighbors(hover) : null;
+    const searching = matches.size > 0;
+
+    ctx.lineWidth = 1;
+    for (const e of edges) {
+      const s = endpoint(e.source);
+      const t = endpoint(e.target);
+      if (!visible(s) || !visible(t)) continue;
+      const active = focus ? focus.has(s.id) && focus.has(t.id) : true;
+      ctx.globalAlpha = active ? (focus ? 0.9 : 0.5) : 0.12;
+      ctx.strokeStyle = e.kind === 'wikilink' ? COLORS.course : LINE;
+      ctx.setLineDash(e.kind === 'wikilink' ? [] : [3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(s.x ?? 0, s.y ?? 0);
+      ctx.lineTo(t.x ?? 0, t.y ?? 0);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    for (const n of nodes) {
+      if (!visible(n)) continue;
+      const dimmed =
+        (focus && !focus.has(n.id)) || (searching && !matches.has(n.id));
+      const r = radius(n);
+      ctx.globalAlpha = dimmed ? 0.18 : 1;
+      ctx.fillStyle = COLORS[n.kind];
+      ctx.beginPath();
+      ctx.arc(n.x ?? 0, n.y ?? 0, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (hover?.id === n.id || matches.has(n.id)) {
+        ctx.strokeStyle = COLORS[n.kind];
+        ctx.globalAlpha = 0.35;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(n.x ?? 0, n.y ?? 0, r + 4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.lineWidth = 1;
+      }
+
+      if (!dimmed && (r > 7.5 || hover?.id === n.id || matches.has(n.id))) {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = hover?.id === n.id ? '#191823' : MUTED;
+        ctx.font = '500 11px Geist Variable, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        const label = n.label.length > 26 ? `${n.label.slice(0, 25)}...` : n.label;
+        ctx.fillText(label, n.x ?? 0, (n.y ?? 0) + r + 13);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const simulation: Simulation<SimNode, undefined> = forceSimulation(nodes)
+    .force(
+      'link',
+      forceLink<SimNode, any>(edges)
+        .id((d: SimNode) => d.id)
+        .distance((e: SimEdge) => (e.kind === 'wikilink' ? 70 : 55))
+        .strength(0.35),
+    )
+    .force('charge', forceManyBody().strength(-190))
+    .force('center', forceCenter(width / 2, height / 2))
+    .force('collide', forceCollide<SimNode>().radius((n) => radius(n) + 9))
+    .on('tick', draw);
+
+  // Pre-warm the layout and paint once synchronously. The simulation itself is
+  // driven by requestAnimationFrame, which browsers pause in hidden tabs, so a
+  // page opened in the background would otherwise show a blank canvas until it
+  // is focused. This also avoids the "everything explodes out of the centre"
+  // flash on first paint.
+  simulation.tick(60);
+  draw();
+
+  if (reduceMotion) {
+    simulation.stop();
+    simulation.tick(240);
+    draw();
+  }
+
+  function at(event: PointerEvent | MouseEvent): SimNode | null {
+    const rect = canvas!.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    let best: SimNode | null = null;
+    let bestDist = Infinity;
+    for (const n of nodes) {
+      if (!visible(n)) continue;
+      const dx = (n.x ?? 0) - x;
+      const dy = (n.y ?? 0) - y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < radius(n) + 6 && dist < bestDist) {
+        best = n;
+        bestDist = dist;
+      }
+    }
+    return best;
+  }
+
+  canvas.addEventListener('pointermove', (event) => {
+    if (dragging) {
+      const rect = canvas!.getBoundingClientRect();
+      dragging.fx = event.clientX - rect.left;
+      dragging.fy = event.clientY - rect.top;
+      if (reduceMotion) draw();
+      return;
+    }
+    const node = at(event);
+    if (node !== hover) {
+      hover = node;
+      canvas!.style.cursor = node ? 'pointer' : 'default';
+      if (reduceMotion) draw();
+    }
+    if (node) {
+      const rect = canvas!.getBoundingClientRect();
+      tip!.hidden = false;
+      tip!.innerHTML = '';
+      tip!.append(node.label);
+      const sub = document.createElement('span');
+      sub.textContent = node.sub;
+      tip!.append(sub);
+      const left = Math.min(event.clientX - rect.left + 14, rect.width - 200);
+      tip!.style.left = `${Math.max(8, left)}px`;
+      tip!.style.top = `${Math.min(event.clientY - rect.top + 14, rect.height - 60)}px`;
+    } else {
+      tip!.hidden = true;
+    }
+  });
+
+  canvas.addEventListener('pointerdown', (event) => {
+    const node = at(event);
+    if (!node) return;
+    dragging = node;
+    node.fx = node.x;
+    node.fy = node.y;
+    if (!reduceMotion) simulation.alphaTarget(0.25).restart();
+    canvas!.setPointerCapture(event.pointerId);
+  });
+
+  canvas.addEventListener('pointerup', (event) => {
+    if (dragging) {
+      dragging.fx = null;
+      dragging.fy = null;
+      dragging = null;
+      if (!reduceMotion) simulation.alphaTarget(0);
+    }
+    canvas!.releasePointerCapture?.(event.pointerId);
+  });
+
+  canvas.addEventListener('click', (event) => {
+    const node = at(event);
+    if (node) location.assign(node.href);
+  });
+
+  canvas.addEventListener('pointerleave', () => {
+    hover = null;
+    tip!.hidden = true;
+    if (reduceMotion) draw();
+  });
+
+  for (const chip of Array.from(document.querySelectorAll<HTMLButtonElement>('.chip'))) {
+    chip.addEventListener('click', () => {
+      const kind = chip.dataset.kind!;
+      if (hidden.has(kind)) hidden.delete(kind);
+      else hidden.add(kind);
+      chip.classList.toggle('on', !hidden.has(kind));
+      draw();
+    });
+  }
+
+  search.addEventListener('input', () => {
+    const query = search!.value.trim().toLowerCase();
+    matches = new Set(
+      query.length >= 2
+        ? nodes.filter((n) => n.label.toLowerCase().includes(query)).map((n) => n.id)
+        : [],
+    );
+    draw();
+  });
+
+  // A ResizeObserver rather than a window listener: it also fires the first time
+  // the canvas gains a layout box (background tab, collapsed pane), so the graph
+  // can never end up permanently blank because it initialized at zero size.
+  let lastWidth = width;
+  const observer = new ResizeObserver(() => {
+    if (!resize()) return;
+    if (Math.abs(width - lastWidth) < 1 && simulation.alpha() < 0.02) {
+      draw();
+      return;
+    }
+    lastWidth = width;
+    simulation.force('center', forceCenter(width / 2, height / 2));
+    if (reduceMotion) {
+      simulation.tick(120);
+      draw();
+    } else {
+      simulation.alpha(0.3).restart();
+    }
+  });
+  observer.observe(canvas);
+</script>

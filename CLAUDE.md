@@ -132,6 +132,30 @@ platform's design evolves and Hari wants parity, re-port tokens from there.
   badge tints and dim sidebar section labels sit slightly under 4.5:1. Do not "fix" them
   without also changing the platform; parity wins here.
 
+## Memory graph, wikilinks, and the Obsidian vault
+
+`src/content/` IS an Obsidian vault (`.obsidian/` config committed, `README.md` explains
+it). Open that folder in Obsidian and you get the same notes, links, and graph locally;
+edit, commit, push, and the site matches.
+
+- **Wikilinks** work in every markdown body: `[[em5090]]`, `[[EM5090]]`, the exact title,
+  or `[[em5090|custom label]]`. Resolved at build time by `src/lib/wikilink.mjs` (a
+  remark plugin wired in astro.config.mjs); unresolved targets render as muted
+  `.wikilink-missing` spans rather than disappearing.
+- **The matching rule is duplicated on purpose** in `wikilink.mjs` (runs in Vite, reads
+  content from disk) and `src/lib/links.ts` (runs in Astro, uses getCollection). If you
+  change normalization in one, change it in the other or links and graph edges drift.
+- **`/graph/`** renders every entry as a node (courses iris, notes green, assignments
+  amber, projects ink) with wikilink + structural edges, using bundled `d3-force` on a
+  canvas. Gotcha baked in: the simulation is rAF-driven and browsers pause rAF in hidden
+  tabs, so the page pre-ticks 60 steps and paints once synchronously; a ResizeObserver
+  (not a window resize listener) re-sizes it, so a canvas that starts at zero size can
+  never stay blank.
+- **Backlinks** ("Linked from") appear on note, course, and project pages via
+  `src/components/Backlinks.astro`.
+- Astro 7 note: remark plugins require `@astrojs/markdown-remark` to be installed
+  explicitly, since Astro 7's default markdown processor is no longer unified-based.
+
 ## IITH Inbox (`/iith/inbox/`)
 
 Client-side page connecting Hari's IITH Google account: pending Classroom work (state

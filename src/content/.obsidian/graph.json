@@ -1,0 +1,26 @@
+{
+  "collapse-filter": false,
+  "search": "",
+  "showTags": true,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    { "query": "path:courses", "color": { "a": 1, "rgb": 5789910 } },
+    { "query": "path:notes", "color": { "a": 1, "rgb": 817493 } },
+    { "query": "path:assignments", "color": { "a": 1, "rgb": 11099915 } },
+    { "query": "path:projects", "color": { "a": 1, "rgb": 1644067 } }
+  ],
+  "collapse-display": false,
+  "showArrow": false,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1.2,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": false,
+  "centerStrength": 0.5,
+  "repelStrength": 10,
+  "linkStrength": 1,
+  "linkDistance": 250,
+  "scale": 1
+}

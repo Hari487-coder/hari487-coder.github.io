@@ -2,6 +2,7 @@
 import { getCollection, getEntry, render } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Base from '../../../layouts/Base.astro';
+import Backlinks from '../../../components/Backlinks.astro';
 import { fmt } from '../../../lib/dates';
 
 export async function getStaticPaths() {
@@ -28,6 +29,8 @@ const course = await getEntry('courses', note.data.course.id);
       <Content />
     </div>
   </div>
+
+  <Backlinks kind="note" id={note.id} />
 
   {course && (
     <p style="margin: 16px 0 0;">
