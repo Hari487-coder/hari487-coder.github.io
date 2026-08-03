@@ -4,6 +4,30 @@
 
 const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 
+/**
+ * Hari's Google OAuth client ID.
+ *
+ * This is NOT a secret and is safe in a public repo: OAuth client IDs are sent
+ * to the browser on every Google sign-in page. Security comes from the
+ * authorized JavaScript origins and redirect URIs configured on the client,
+ * not from hiding this string. The confidential half is the client secret,
+ * which the implicit flow does not use and this site never holds.
+ *
+ * Baked in so sign-in works on any browser without pasting it first; the
+ * settings field still overrides it (see resolveClientId).
+ */
+export const DEFAULT_CLIENT_ID =
+  '409923533357-j7cq10ncqh0114hl5vu7rqfdnkelkasi.apps.googleusercontent.com';
+
+/** Stored override wins, so a different client can be tried without a rebuild. */
+export function resolveClientId(): string {
+  try {
+    return (localStorage.getItem('inbox.clientId') ?? '').trim() || DEFAULT_CLIENT_ID;
+  } catch {
+    return DEFAULT_CLIENT_ID;
+  }
+}
+
 export const SCOPES = [
   'https://www.googleapis.com/auth/classroom.courses.readonly',
   'https://www.googleapis.com/auth/classroom.coursework.me.readonly',

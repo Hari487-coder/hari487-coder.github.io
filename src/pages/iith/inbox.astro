@@ -77,18 +77,20 @@ const trackedTitles = assignments.map((a) =>
     <summary><Icon name="lucide:settings-2" /> Setup</summary>
     <div class="settings-body">
       <label class="field">
-        <span class="field-label">Google OAuth client ID</span>
-        <input id="client-id" type="text" autocomplete="off" placeholder="1234...apps.googleusercontent.com" />
+        <span class="field-label">Google OAuth client ID (already configured)</span>
+        <input id="client-id" type="text" autocomplete="off" />
       </label>
       <p class="actions-row">
-        <button class="btn-secondary" id="save-client">Save</button>
+        <button class="btn-secondary" id="save-client">Save override</button>
         <span class="meta" id="client-status"></span>
       </p>
       <p class="meta">
-        Created once in Google Cloud (see docs/google-oauth-setup.md in the repo). The
-        client ID is not a secret; it only works from this site. Tracking an item into
-        the site assignments reuses the GitHub token saved on the Live notes page. If
-        sign-in says your Workspace blocks the app, IITH IT has to allow it.
+        Your client ID is built into this page, so there is nothing to paste. Leave this
+        field empty unless you want to point at a different Google Cloud client. A client
+        ID is not a secret: it is public on every Google sign-in page, and it only works
+        from this site's own origin. Tracking a Classroom item into your assignments
+        reuses the GitHub token from Capture. If sign-in says your Workspace blocks the
+        app, IITH IT has to allow it.
       </p>
     </div>
   </details>
@@ -218,12 +220,14 @@ const trackedTitles = assignments.map((a) =>
 
 <script>
   import {
+    DEFAULT_CLIENT_ID,
     beginAuth,
     buildAuthUrl,
     clearToken,
     explainAuthError,
     getToken,
     handleRedirect,
+    resolveClientId,
   } from '../../lib/inbox/auth';
   import { ApiDisabledError, AuthError, fetchPending, type PendingItem } from '../../lib/inbox/classroom';
   import { fetchAttention, type MailItem } from '../../lib/inbox/gmail';
@@ -263,19 +267,21 @@ const trackedTitles = assignments.map((a) =>
   };
 
   // ---------- settings ----------
+  // The field shows any override; empty means the built-in client is in use.
   els.clientId.value = localStorage.getItem('inbox.clientId') ?? '';
+  els.clientId.placeholder = DEFAULT_CLIENT_ID;
   els.saveClient.addEventListener('click', () => {
-    localStorage.setItem('inbox.clientId', els.clientId.value.trim());
-    els.clientStatus.textContent = 'Saved.';
+    const value = els.clientId.value.trim();
+    if (value) localStorage.setItem('inbox.clientId', value);
+    else localStorage.removeItem('inbox.clientId');
+    els.clientStatus.textContent = value ? 'Override saved.' : 'Using the built-in client.';
     updateConnectState();
   });
 
   function updateConnectState() {
-    const hasClient = !!(localStorage.getItem('inbox.clientId') ?? '').trim();
-    els.connect.disabled = !hasClient;
-    els.connectHint.textContent = hasClient
-      ? ''
-      : 'Paste your Google OAuth client ID in Setup below first.';
+    els.connect.disabled = false;
+    const override = (localStorage.getItem('inbox.clientId') ?? '').trim();
+    els.connectHint.textContent = override ? 'Using your saved client ID.' : '';
   }
 
   // ---------- rendering ----------
@@ -491,8 +497,7 @@ const trackedTitles = assignments.map((a) =>
   }
 
   function connect() {
-    const clientId = (localStorage.getItem('inbox.clientId') ?? '').trim();
-    if (clientId) beginAuth(clientId);
+    beginAuth(resolveClientId());
   }
 
   els.connect.addEventListener('click', connect);
@@ -526,6 +531,6 @@ const trackedTitles = assignments.map((a) =>
       );
       renderMail(mail.map((m) => ({ ...m, date: new Date(m.date) })));
     },
-    authUrl: () => buildAuthUrl('TEST_CLIENT_ID.apps.googleusercontent.com'),
+    authUrl: () => buildAuthUrl(resolveClientId()),
   };
 </script>
