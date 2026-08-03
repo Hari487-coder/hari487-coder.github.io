@@ -24,11 +24,13 @@ const sections = CATEGORY_LIST.map((meta) => ({
       <p class="eyebrow">{notes.length} saved</p>
       <h1>Notes</h1>
       <p class="subtitle">
-        Everything you have captured, split by where it belongs. Record with the
-        <a href="/iith/live/">live recorder</a> or bring in recordings, photos, and PDFs
-        through <a href="/iith/import/">import</a>.
+        Everything you have captured, split by where it belongs. Add more from
+        <a href="/iith/capture/">Capture</a>.
       </p>
     </div>
+    <a class="btn-secondary" href="/iith/brainstorm/">
+      <Icon name="lucide:brain" /> Brainstorm from notes
+    </a>
   </div>
 
   {notes.length === 0 && (
@@ -40,7 +42,7 @@ const sections = CATEGORY_LIST.map((meta) => ({
           site</strong>, which needs a GitHub token in the recorder settings. Anything
           still sitting in a recorder tab can be recovered from its restore banner.
         </p>
-        <a class="btn" href="/iith/live/">Open the recorder</a>
+        <a class="btn" href="/iith/capture/">Open the recorder</a>
       </div>
     </div>
   )}

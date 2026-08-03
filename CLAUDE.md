@@ -76,7 +76,7 @@ date: 2026-07-31
 Markdown notes body.
 ```
 
-## Live lecture recorder (`/iith/live/`)
+## Capture (`/iith/capture/`, `/iith/capture/import/`)
 
 Fully client-side page Hari opens in class (Chrome only): browser speech recognition
 (en-IN, auto-restart, wake lock) streams a transcript; every ~90s Claude
@@ -189,7 +189,7 @@ the same path as the live recorder.
 - File classification falls back to the extension, since phone recordings often arrive
   with an empty MIME type.
 
-## Brainstorm (`/iith/brainstorm/`) and Studio (`/studio/`)
+## Brainstorm (`/iith/brainstorm/`, reached from Notes) and Studio (`/studio/`, which lists saved ideas)
 
 Both read Hari's own content, run Opus 5, and save their output as a page in the `ideas`
 collection (`kind: application | content`), so results join the graph and compound.

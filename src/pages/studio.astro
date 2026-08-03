@@ -2,10 +2,17 @@
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Base from '../layouts/Base.astro';
+import { fmt } from '../lib/dates';
 
 const projects = await getCollection('projects');
 const notes = await getCollection('notes');
 const courses = await getCollection('courses');
+
+/** Saved ideas live here rather than in their own nav item: the studio makes
+    them, so this is where you come back to read them. */
+const savedIdeas = (await getCollection('ideas')).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
 
 /** Everything in the hub, as material the studio can reason over. */
 const sources = [
@@ -99,6 +106,36 @@ const sources = [
     </div>
     <div class="alert-error card-lite" id="save-error" hidden></div>
   </div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Saved ideas</h2>
+      <span class="meta">{savedIdeas.length}</span>
+    </div>
+    <div class="card">
+      {savedIdeas.length === 0 ? (
+        <p class="meta" style="margin: 0;">
+          Nothing saved yet. Run either mode above, then press Save as idea.
+        </p>
+      ) : (
+        <ul class="row-list" style="margin-top: 0;">
+          {savedIdeas.map((idea) => (
+            <li>
+              <div class="row-main">
+                <a class="row-title" href={`/ideas/${idea.id}/`}>{idea.data.title}</a>
+                <div class="row-sub">
+                  {idea.data.kind === 'application' ? 'Applied to what I build' : 'Content'}
+                </div>
+              </div>
+              <div class="row-side">
+                <span class="row-due">{fmt(idea.data.date)}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  </section>
 </Base>
 
 <style>

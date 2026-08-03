@@ -1,8 +1,9 @@
 ---
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
-import Base from '../../layouts/Base.astro';
-import { CATEGORY_LIST } from '../../lib/categories';
+import Base from '../../../layouts/Base.astro';
+import CaptureTabs from '../../../components/CaptureTabs.astro';
+import { CATEGORY_LIST } from '../../../lib/categories';
 
 const courses = (await getCollection('courses')).sort((a, b) => {
   const rank = (s: string) => (s === 'ongoing' ? 0 : 1);
@@ -13,13 +14,13 @@ const courseOptions = courses.map((c) => ({ id: c.id, code: c.data.code, name: c
 ---
 
 <Base
-  title="Import to notes"
+  title="Capture: import files"
   description="Turn recordings, slide photos, and PDFs into structured lecture notes."
 >
   <div class="page-head">
     <div class="page-head-text">
-      <p class="eyebrow">IIT Hyderabad</p>
-      <h1>Import to notes</h1>
+      <p class="eyebrow">Capture</p>
+      <h1>Import files</h1>
       <p class="subtitle">
         Drop in a recording, photos of the board, or a slide PDF. Recordings are
         transcribed on this machine; the rest goes straight to Claude. Out comes one set
@@ -27,6 +28,8 @@ const courseOptions = courses.map((c) => ({ id: c.id, code: c.data.code, name: c
       </p>
     </div>
   </div>
+
+  <CaptureTabs active="import" />
 
   <div class="card">
     <div class="controls">
@@ -105,7 +108,7 @@ const courseOptions = courses.map((c) => ({ id: c.id, code: c.data.code, name: c
     <div class="prose" style="margin-top: 12px;">
       <p>
         Photos and PDFs are sent to Claude with your own API key, the same one the
-        <a href="/iith/live/">live recorder</a> uses. Audio is different: Claude cannot
+        <a href="/iith/capture/">live recorder</a> uses. Audio is different: Claude cannot
         read audio, so a Whisper model runs locally in this browser to produce a
         transcript first. The recording itself never leaves your machine. The first
         recording you import downloads about 50MB of model weights, which the browser
@@ -260,11 +263,11 @@ const courseOptions = courses.map((c) => ({ id: c.id, code: c.data.code, name: c
 <script>
   import { marked } from 'marked';
   import DOMPurify from 'dompurify';
-  import { imageBlock, kindOf, pdfBlock, type Kind } from '../../lib/import/files';
-  import { transcribe } from '../../lib/import/transcribe';
-  import { notesFromSources } from '../../lib/live/notesEngine';
-  import { saveToRepo, downloadMd } from '../../lib/live/saver';
-  import type { LiveSession } from '../../lib/live/session';
+  import { imageBlock, kindOf, pdfBlock, type Kind } from '../../../lib/import/files';
+  import { transcribe } from '../../../lib/import/transcribe';
+  import { notesFromSources } from '../../../lib/live/notesEngine';
+  import { saveToRepo, downloadMd } from '../../../lib/live/saver';
+  import type { LiveSession } from '../../../lib/live/session';
 
   const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
     document.getElementById(id) as T;

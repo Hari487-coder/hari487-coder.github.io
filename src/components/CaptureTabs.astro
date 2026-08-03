@@ -1,0 +1,63 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+  active: 'record' | 'import';
+}
+
+const { active } = Astro.props;
+---
+
+<div class="capture-tabs" role="tablist" aria-label="Capture mode">
+  <a
+    class:list={['capture-tab', { on: active === 'record' }]}
+    href="/iith/capture/"
+    role="tab"
+    aria-selected={active === 'record'}
+  >
+    <Icon name="lucide:mic" /> Record live
+  </a>
+  <a
+    class:list={['capture-tab', { on: active === 'import' }]}
+    href="/iith/capture/import/"
+    role="tab"
+    aria-selected={active === 'import'}
+  >
+    <Icon name="lucide:file-up" /> Import files
+  </a>
+</div>
+
+<style>
+  .capture-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .capture-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 17px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border);
+    background: var(--surface-sunken);
+    color: var(--text-muted);
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .capture-tab:hover {
+    color: var(--text-primary);
+  }
+  .capture-tab.on {
+    background: var(--surface);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-xs);
+  }
+  .capture-tab svg {
+    width: 15px;
+    height: 15px;
+  }
+</style>

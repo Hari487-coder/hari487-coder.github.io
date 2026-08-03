@@ -1,9 +1,10 @@
 ---
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
-import Base from '../../layouts/Base.astro';
-import { fmt } from '../../lib/dates';
-import { CATEGORY_LIST } from '../../lib/categories';
+import Base from '../../../layouts/Base.astro';
+import CaptureTabs from '../../../components/CaptureTabs.astro';
+import { fmt } from '../../../lib/dates';
+import { CATEGORY_LIST } from '../../../lib/categories';
 
 const courses = (await getCollection('courses')).sort((a, b) => {
   const rank = (s: string) => (s === 'ongoing' ? 0 : 1);
@@ -33,19 +34,21 @@ for (const n of allNotes) {
 ---
 
 <Base
-  title="Live notes"
+  title="Capture: record live"
   description="Live lecture recorder: the browser transcribes, Claude takes structured notes, one click saves them to the site."
 >
   <div class="page-head">
     <div class="page-head-text">
-      <p class="eyebrow">Live</p>
-      <h1>Live lecture notes</h1>
+      <p class="eyebrow">Capture</p>
+      <h1>Record live</h1>
       <p class="subtitle">
         Pick the course, hit start, put the laptop near the front. The browser transcribes
         the lecture and Claude grows structured notes as the professor speaks.
       </p>
     </div>
   </div>
+
+  <CaptureTabs active="record" />
 
   <div class="alert-info card" id="unsupported" hidden>
     This browser has no speech recognition. Open this page in Chrome on your laptop or
@@ -350,7 +353,7 @@ for (const n of allNotes) {
 <script>
   import { marked } from 'marked';
   import DOMPurify from 'dompurify';
-  import { createRecognizer, isSupported } from '../../lib/live/recognizer';
+  import { createRecognizer, isSupported } from '../../../lib/live/recognizer';
   import {
     clearSession,
     createSession,
@@ -361,9 +364,9 @@ for (const n of allNotes) {
     transcriptText,
     wordCount,
     type LiveSession,
-  } from '../../lib/live/session';
-  import { MIN_DELTA_CHARS, updateNotes } from '../../lib/live/notesEngine';
-  import { downloadMd, saveToRepo } from '../../lib/live/saver';
+  } from '../../../lib/live/session';
+  import { MIN_DELTA_CHARS, updateNotes } from '../../../lib/live/notesEngine';
+  import { downloadMd, saveToRepo } from '../../../lib/live/saver';
 
   const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
     document.getElementById(id) as T;

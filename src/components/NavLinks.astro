@@ -11,21 +11,20 @@ interface Link {
 }
 
 /**
- * Three sections to navigate and manage from. The capture tools (Live notes,
- * Import) sit in Workspace rather than IITH because they now record into any
- * section, not only coursework.
+ * Three sections: work that is not academic, everything academic, and content.
+ *
+ * Deliberately nine links. Capture merges the recorder and importer behind one
+ * door, Ideas lives inside Studio that produces it, Brainstorm is reached from
+ * the notes it reads, and About sits in the footer. Everything stays reachable
+ * with fewer front doors.
  */
 const groups: { label: string; links: Link[] }[] = [
   {
     label: 'Workspace',
     links: [
       { href: '/', label: 'Home', icon: 'lucide:layout-dashboard', match: (p) => p === '/' },
-      { href: '/notes/', label: 'Notes', icon: 'lucide:notebook-pen', match: (p) => p.startsWith('/notes') },
-      { href: '/iith/live/', label: 'Live notes', icon: 'lucide:mic', match: (p) => p.startsWith('/iith/live') },
-      { href: '/iith/import/', label: 'Import to notes', icon: 'lucide:file-up', match: (p) => p.startsWith('/iith/import') },
       { href: '/projects/', label: 'Projects', icon: 'lucide:wrench', match: (p) => p.startsWith('/projects') },
       { href: '/graph/', label: 'Graph', icon: 'lucide:share-2', match: (p) => p.startsWith('/graph') },
-      { href: '/about/', label: 'About', icon: 'lucide:user', match: (p) => p.startsWith('/about') },
     ],
   },
   {
@@ -34,15 +33,15 @@ const groups: { label: string; links: Link[] }[] = [
       { href: '/iith/', label: 'Courses', icon: 'lucide:graduation-cap', match: (p) => p === '/iith/' || p.startsWith('/iith/courses') },
       { href: '/iith/timetable/', label: 'Timetable', icon: 'lucide:calendar-days', match: (p) => p.startsWith('/iith/timetable') },
       { href: '/iith/assignments/', label: 'Assignments', icon: 'lucide:list-checks', match: (p) => p.startsWith('/iith/assignments') },
-      { href: '/iith/brainstorm/', label: 'Brainstorm', icon: 'lucide:brain', match: (p) => p.startsWith('/iith/brainstorm') },
-      { href: '/iith/inbox/', label: 'Inbox', icon: 'lucide:inbox', match: (p) => p.startsWith('/iith/inbox') },
+      { href: '/notes/', label: 'Notes', icon: 'lucide:notebook-pen', match: (p) => p.startsWith('/notes') || p.startsWith('/iith/brainstorm') },
+      { href: '/iith/capture/', label: 'Capture', icon: 'lucide:mic', match: (p) => p.startsWith('/iith/capture') },
+      { href: '/iith/inbox/', label: 'Classroom', icon: 'lucide:inbox', match: (p) => p.startsWith('/iith/inbox') },
     ],
   },
   {
     label: 'Content creation',
     links: [
-      { href: '/studio/', label: 'Studio', icon: 'lucide:clapperboard', match: (p) => p.startsWith('/studio') },
-      { href: '/ideas/', label: 'Ideas', icon: 'lucide:lightbulb', match: (p) => p.startsWith('/ideas') },
+      { href: '/studio/', label: 'Studio', icon: 'lucide:clapperboard', match: (p) => p.startsWith('/studio') || p.startsWith('/ideas') },
     ],
   },
 ];
@@ -67,6 +66,14 @@ const groups: { label: string; links: Link[] }[] = [
 </nav>
 
 <div class="sidebar-footer">
+  <a
+    class:list={['sidebar-link', { active: path.startsWith('/about') }]}
+    href="/about/"
+    aria-current={path.startsWith('/about') ? 'page' : undefined}
+  >
+    <Icon name="lucide:user" />
+    About
+  </a>
   <a class="sidebar-account" href="https://github.com/Hari487-coder">
     <span class="avatar">HP</span>
     <span class="sidebar-account-email">github.com/Hari487-coder</span>
