@@ -189,6 +189,31 @@ the same path as the live recorder.
 - File classification falls back to the extension, since phone recordings often arrive
   with an empty MIME type.
 
+## Brainstorm (`/iith/brainstorm/`) and Studio (`/studio/`)
+
+Both read Hari's own content, run Opus 5, and save their output as a page in the `ideas`
+collection (`kind: application | content`), so results join the graph and compound.
+
+- **Brainstorm** reads selected lecture notes and course outlines against the project
+  writeups and returns applications, exposed gaps, and next actions.
+- **Studio** has two modes: "find my angle" (reads the whole hub and recommends content
+  directions, for when the direction is undecided) and "generate ideas" (concrete pieces
+  plus a beat-by-beat build-out for the strongest one).
+- The prompts instruct the model to reference sources as `[[wikilinks]]`, which is what
+  makes saved ideas link back to their notes and projects. The in-page preview renders
+  those as literal `[[...]]` because it uses marked directly; the saved file goes through
+  the remark plugin and links properly.
+- Saving reuses the shared GitHub helper and requires the token from the live recorder
+  settings.
+
+## Course timings
+
+`meetings` in a course's frontmatter overrides the slot grid entirely, for when an
+instructor announces different times (SE5723 runs Mon 08:00 to 10:00, where slot A says
+09:00). Set `timingNote` alongside it and the timetable shows the note and flags the
+course with an asterisk. The timetable derives its rows from the times actually in use,
+so a two-hour 8am block renders fine.
+
 ## IITH Inbox (`/iith/inbox/`)
 
 Client-side page connecting Hari's IITH Google account: pending Classroom work (state

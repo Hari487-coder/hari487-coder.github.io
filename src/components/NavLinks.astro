@@ -6,6 +6,8 @@ const path = Astro.url.pathname;
 const workspace = [
   { href: '/', label: 'Home', icon: 'lucide:layout-dashboard', match: (p: string) => p === '/' },
   { href: '/projects/', label: 'Projects', icon: 'lucide:wrench', match: (p: string) => p.startsWith('/projects') },
+  { href: '/ideas/', label: 'Ideas', icon: 'lucide:lightbulb', match: (p: string) => p.startsWith('/ideas') },
+  { href: '/studio/', label: 'Studio', icon: 'lucide:clapperboard', match: (p: string) => p.startsWith('/studio') },
   { href: '/graph/', label: 'Graph', icon: 'lucide:share-2', match: (p: string) => p.startsWith('/graph') },
   { href: '/about/', label: 'About', icon: 'lucide:user', match: (p: string) => p.startsWith('/about') },
 ];
@@ -16,6 +18,7 @@ const iith = [
   { href: '/iith/assignments/', label: 'Assignments', icon: 'lucide:list-checks', match: (p: string) => p.startsWith('/iith/assignments') },
   { href: '/iith/live/', label: 'Live notes', icon: 'lucide:mic', match: (p: string) => p.startsWith('/iith/live') },
   { href: '/iith/import/', label: 'Import to notes', icon: 'lucide:file-up', match: (p: string) => p.startsWith('/iith/import') },
+  { href: '/iith/brainstorm/', label: 'Brainstorm', icon: 'lucide:brain', match: (p: string) => p.startsWith('/iith/brainstorm') },
   { href: '/iith/inbox/', label: 'Inbox', icon: 'lucide:inbox', match: (p: string) => p.startsWith('/iith/inbox') },
 ];
 ---

@@ -1,0 +1,349 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import Base from '../../layouts/Base.astro';
+import { fmt } from '../../lib/dates';
+
+const courses = await getCollection('courses');
+const courseById = new Map(courses.map((c) => [c.id, c]));
+
+const notes = (await getCollection('notes')).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+
+const noteOptions = notes.map((n) => ({
+  slug: n.id,
+  label: n.data.title,
+  course: courseById.get(n.data.course.id)?.data.code ?? '',
+  date: fmt(n.data.date),
+  body: n.body ?? '',
+}));
+
+const projectSources = (await getCollection('projects')).map((p) => ({
+  slug: p.id,
+  label: p.data.title,
+  body: `${p.data.summary}\nStack: ${p.data.stack.join(', ')}\nStatus: ${p.data.status}\n\n${p.body ?? ''}`,
+}));
+
+const courseSources = courses.map((c) => ({
+  slug: c.id,
+  label: `${c.data.code} ${c.data.name}`,
+  course: c.data.code,
+  date: 'course',
+  body: `${c.data.code} ${c.data.name}. ${c.body ?? ''}`,
+}));
+---
+
+<Base
+  title="Brainstorm"
+  description="Read your coursework against the things you actually build."
+>
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">IIT Hyderabad</p>
+      <h1>Brainstorm</h1>
+      <p class="subtitle">
+        Pick lecture notes, across courses if you want. Claude reads them against the
+        projects you actually run and works out what follows: specific moves, what the
+        material exposes, and what to do next.
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-row">
+      <h2>Source material</h2>
+      <span class="meta" id="picked">nothing selected</span>
+    </div>
+
+    {noteOptions.length === 0 && (
+      <p class="meta" style="margin-top: 12px;">
+        No lecture notes saved yet. Record one on the <a href="/iith/live/">live recorder</a>
+        or bring one in through <a href="/iith/import/">import</a>, then come back. You can
+        still brainstorm from the course outlines below.
+      </p>
+    )}
+
+    <ul class="pick-list" id="pick-list">
+      {noteOptions.map((n) => (
+        <li>
+          <label>
+            <input type="checkbox" data-slug={n.slug} data-kind="note" />
+            <span class="pick-main">
+              <span class="pick-title">{n.label}</span>
+              <span class="pick-sub">{n.course} · {n.date}</span>
+            </span>
+          </label>
+        </li>
+      ))}
+      {courseSources.map((c) => (
+        <li>
+          <label>
+            <input type="checkbox" data-slug={c.slug} data-kind="course" />
+            <span class="pick-main">
+              <span class="pick-title">{c.label}</span>
+              <span class="pick-sub">course outline</span>
+            </span>
+          </label>
+        </li>
+      ))}
+    </ul>
+
+    <label class="field">
+      <span class="field-label">Focus (optional)</span>
+      <input id="focus" type="text" placeholder="e.g. pricing the mortgage platform per county" />
+    </label>
+
+    <p class="actions-row">
+      <button class="btn" id="run" disabled><Icon name="lucide:brain" /> Brainstorm</button>
+      <span class="meta" id="status"></span>
+    </p>
+    <div class="alert-error card-lite" id="error" hidden></div>
+  </div>
+
+  <div class="card" id="result-card" hidden>
+    <div class="card-row">
+      <h2>Result</h2>
+    </div>
+    <div class="prose" id="output"></div>
+    <p class="actions-row">
+      <button class="btn" id="save"><Icon name="lucide:upload" /> Save as idea</button>
+      <button class="btn-secondary" id="copy"><Icon name="lucide:copy" /> Copy</button>
+    </p>
+    <div class="alert-success card-lite" id="save-success" hidden>
+      Saved. Live in about two minutes at <a id="site-link" href="/">this page</a>.
+    </div>
+    <div class="alert-error card-lite" id="save-error" hidden></div>
+  </div>
+</Base>
+
+<style>
+  .pick-list {
+    list-style: none;
+    margin: 14px 0 18px;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .pick-list li {
+    border-bottom: 1px solid var(--border);
+  }
+  .pick-list li:last-child {
+    border-bottom: none;
+  }
+  .pick-list label {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 11px 2px;
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+    margin: 0;
+    color: inherit;
+    font-size: inherit;
+  }
+  .pick-list input {
+    margin-top: 3px;
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    flex: none;
+  }
+  .pick-main {
+    min-width: 0;
+  }
+  .pick-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .pick-sub {
+    display: block;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+  .field-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+  }
+  .field input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    font-size: 14.5px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-family: inherit;
+  }
+  .field input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+  .actions-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 16px 0 0;
+  }
+  .card-lite {
+    margin-top: 14px;
+    padding: 13px 16px;
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    border: 1px solid transparent;
+  }
+  .alert-error.card-lite {
+    background: var(--critical-tint);
+    color: var(--critical);
+    border-color: var(--critical-tint-border);
+  }
+  .alert-success.card-lite {
+    background: var(--good-tint);
+    color: var(--good);
+    border-color: var(--good-tint-border);
+  }
+  .alert-success.card-lite a {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+  #result-card {
+    margin-top: 16px;
+  }
+</style>
+
+<script define:vars={{ noteOptions, courseSources, projectSources }}>
+  window.__brainstormData = { noteOptions, courseSources, projectSources };
+</script>
+
+<script>
+  import { marked } from 'marked';
+  import DOMPurify from 'dompurify';
+  import { brainstormApplications, saveIdea, type Source } from '../../lib/ideas';
+
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
+    document.getElementById(id) as T;
+
+  const data = (window as any).__brainstormData as {
+    noteOptions: (Source & { course: string; date: string })[];
+    courseSources: (Source & { course: string; date: string })[];
+    projectSources: Source[];
+  };
+
+  const byId = new Map<string, Source>();
+  for (const s of [...data.noteOptions, ...data.courseSources]) byId.set(s.slug, s);
+
+  const els = {
+    list: $('pick-list'),
+    picked: $('picked'),
+    focus: $<HTMLInputElement>('focus'),
+    run: $<HTMLButtonElement>('run'),
+    status: $('status'),
+    error: $('error'),
+    resultCard: $('result-card'),
+    output: $('output'),
+    save: $<HTMLButtonElement>('save'),
+    copy: $<HTMLButtonElement>('copy'),
+    saveSuccess: $('save-success'),
+    siteLink: $<HTMLAnchorElement>('site-link'),
+    saveError: $('save-error'),
+  };
+
+  let markdown = '';
+
+  function selected(): Source[] {
+    return Array.from(
+      els.list.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked'),
+    )
+      .map((cb) => byId.get(cb.dataset.slug ?? ''))
+      .filter((s): s is Source => Boolean(s));
+  }
+
+  function refresh() {
+    const n = selected().length;
+    els.picked.textContent = n ? `${n} selected` : 'nothing selected';
+    els.run.disabled = n === 0;
+  }
+
+  els.list.addEventListener('change', refresh);
+  refresh();
+
+  els.run.addEventListener('click', async () => {
+    const key = localStorage.getItem('live.anthropicKey');
+    if (!key) {
+      els.error.hidden = false;
+      els.error.textContent =
+        'Add your Anthropic API key in the live recorder settings first, then come back.';
+      return;
+    }
+    els.run.disabled = true;
+    els.error.hidden = true;
+    els.status.textContent = 'thinking, this takes a moment';
+    try {
+      markdown = await brainstormApplications({
+        apiKey: key,
+        notes: selected(),
+        projects: data.projectSources,
+        focus: els.focus.value.trim(),
+      });
+      els.output.innerHTML = DOMPurify.sanitize(await marked.parse(markdown));
+      els.resultCard.hidden = false;
+      els.status.textContent = '';
+      els.save.disabled = !localStorage.getItem('live.githubToken');
+    } catch (err) {
+      els.error.hidden = false;
+      els.error.textContent = `Failed: ${err instanceof Error ? err.message : err}`;
+      els.status.textContent = '';
+    } finally {
+      els.run.disabled = selected().length === 0;
+    }
+  });
+
+  els.save.addEventListener('click', async () => {
+    const token = localStorage.getItem('live.githubToken');
+    if (!markdown) return;
+    if (!token) {
+      els.saveError.hidden = false;
+      els.saveError.textContent =
+        'No GitHub token saved. Add one in the live recorder settings to save ideas to the site, or use Copy.';
+      return;
+    }
+    els.save.disabled = true;
+    els.saveError.hidden = true;
+    try {
+      const result = await saveIdea({ token, markdown, kind: 'application', date: new Date() });
+      els.siteLink.href = result.siteUrl;
+      els.saveSuccess.hidden = false;
+    } catch (err) {
+      els.save.disabled = false;
+      els.saveError.hidden = false;
+      els.saveError.textContent = `Save failed: ${err instanceof Error ? err.message : err}`;
+    }
+  });
+
+  els.copy.addEventListener('click', async () => {
+    if (markdown) await navigator.clipboard.writeText(markdown);
+    els.status.textContent = 'copied';
+  });
+
+  (window as any).__brainstorm = {
+    setResult(md: string) {
+      markdown = md;
+      els.output.innerHTML = DOMPurify.sanitize(marked.parse(md) as string);
+      els.resultCard.hidden = false;
+    },
+    selectedCount: () => selected().length,
+  };
+</script>

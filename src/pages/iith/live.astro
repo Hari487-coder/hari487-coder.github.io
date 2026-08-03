@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Base from '../../layouts/Base.astro';
+import { fmt } from '../../lib/dates';
 
 const courses = (await getCollection('courses')).sort((a, b) => {
   const rank = (s: string) => (s === 'ongoing' ? 0 : 1);
@@ -13,6 +14,20 @@ const courseOptions = courses.map((c) => ({
   code: c.data.code,
   name: c.data.name,
 }));
+
+const allNotes = (await getCollection('notes')).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+
+/** Past notes per course, so the recorder can show what came before. */
+const notesByCourse: Record<string, { title: string; href: string; date: string }[]> = {};
+for (const n of allNotes) {
+  (notesByCourse[n.data.course.id] ??= []).push({
+    title: n.data.title,
+    href: `/iith/notes/${n.id}/`,
+    date: fmt(n.data.date),
+  });
+}
 ---
 
 <Base
@@ -97,6 +112,17 @@ const courseOptions = courses.map((c) => ({
       </div>
     </div>
   </div>
+
+  <section class="section" id="past-notes-section">
+    <div class="section-head">
+      <h2>Notes for this course</h2>
+      <span class="meta" id="past-count"></span>
+    </div>
+    <div class="card">
+      <p class="meta" id="past-empty">No notes saved for this course yet.</p>
+      <ul class="row-list" id="past-list" style="margin-top: 0;" hidden></ul>
+    </div>
+  </section>
 
   <div class="card" id="actions-card" hidden>
     <div class="card-row">
@@ -291,6 +317,10 @@ const courseOptions = courses.map((c) => ({
   }
 </style>
 
+<script define:vars={{ notesByCourse }}>
+  window.__pastNotes = notesByCourse;
+</script>
+
 <script>
   import { marked } from 'marked';
   import DOMPurify from 'dompurify';
@@ -356,6 +386,48 @@ const courseOptions = courses.map((c) => ({
   let tickHandle: number | undefined;
   let aiBusy = false;
   let wakeLock: any = null;
+
+  // ---------- past notes for the selected course ----------
+  const pastNotes = (window as any).__pastNotes as Record<
+    string,
+    { title: string; href: string; date: string }[]
+  >;
+
+  function renderPastNotes() {
+    const list = pastNotes[els.course.value] ?? [];
+    const listEl = document.getElementById('past-list') as HTMLUListElement;
+    const emptyEl = document.getElementById('past-empty') as HTMLElement;
+    const countEl = document.getElementById('past-count') as HTMLElement;
+
+    countEl.textContent = list.length ? String(list.length) : '';
+    emptyEl.hidden = list.length > 0;
+    listEl.hidden = list.length === 0;
+    listEl.innerHTML = '';
+
+    for (const note of list) {
+      const li = document.createElement('li');
+      const main = document.createElement('div');
+      main.className = 'row-main';
+      const link = document.createElement('a');
+      link.className = 'row-title';
+      link.href = note.href;
+      link.textContent = note.title;
+      main.append(link);
+
+      const side = document.createElement('div');
+      side.className = 'row-side';
+      const date = document.createElement('span');
+      date.className = 'row-due';
+      date.textContent = note.date;
+      side.append(date);
+
+      li.append(main, side);
+      listEl.append(li);
+    }
+  }
+
+  els.course.addEventListener('change', renderPastNotes);
+  renderPastNotes();
 
   // ---------- keys ----------
   els.keyAnthropic.value = localStorage.getItem('live.anthropicKey') ?? '';

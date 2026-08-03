@@ -12,6 +12,21 @@ const courses = defineCollection({
     slot: z.string().optional(),
     room: z.string().optional(),
     instructor: z.string().optional(),
+    /**
+     * Real meeting times, when the instructor announces something other than
+     * the published slot grid. Overrides the slot entirely. day: 0 = Monday.
+     */
+    meetings: z
+      .array(
+        z.object({
+          day: z.number().int().min(0).max(6),
+          start: z.string().regex(/^\d{2}:\d{2}$/),
+          end: z.string().regex(/^\d{2}:\d{2}$/),
+        }),
+      )
+      .optional(),
+    /** Shown on the timetable when timings are unusual or in flux. */
+    timingNote: z.string().optional(),
     status: z.enum(['ongoing', 'done', 'planned']),
   }),
 });
@@ -52,4 +67,14 @@ const notes = defineCollection({
   }),
 });
 
-export const collections = { courses, assignments, projects, notes };
+const ideas = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/ideas' }),
+  schema: z.object({
+    title: z.string(),
+    /** application: coursework applied to a real project. content: something to make. */
+    kind: z.enum(['application', 'content']),
+    date: z.coerce.date(),
+  }),
+});
+
+export const collections = { courses, assignments, projects, notes, ideas };

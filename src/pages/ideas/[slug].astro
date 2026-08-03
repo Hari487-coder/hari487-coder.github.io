@@ -1,0 +1,31 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import { fmt } from '../../lib/dates';
+
+export async function getStaticPaths() {
+  const ideas = await getCollection('ideas');
+  return ideas.map((idea) => ({ params: { slug: idea.id }, props: { idea } }));
+}
+
+const { idea } = Astro.props;
+const { Content } = await render(idea);
+const applied = idea.data.kind === 'application';
+---
+
+<Base title={idea.data.title} description={`${applied ? 'Applied idea' : 'Content idea'}: ${idea.data.title}`}>
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">{fmt(idea.data.date)}</p>
+      <h1>{idea.data.title}</h1>
+    </div>
+    <StatusBadge tone={applied ? 'accent' : 'good'} label={applied ? 'applied' : 'content'} />
+  </div>
+
+  <div class="card">
+    <div class="prose">
+      <Content />
+    </div>
+  </div>
+</Base>

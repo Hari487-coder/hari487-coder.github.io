@@ -1,0 +1,325 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import Base from '../layouts/Base.astro';
+
+const projects = await getCollection('projects');
+const notes = await getCollection('notes');
+const courses = await getCollection('courses');
+
+/** Everything in the hub, as material the studio can reason over. */
+const sources = [
+  ...projects.map((p) => ({
+    slug: p.id,
+    label: p.data.title,
+    body: `PROJECT. ${p.data.summary}\nStack: ${p.data.stack.join(', ')}\nStatus: ${p.data.status}\n\n${p.body ?? ''}`,
+  })),
+  ...courses.map((c) => ({
+    slug: c.id,
+    label: `${c.data.code} ${c.data.name}`,
+    body: `COURSE. ${c.data.code} ${c.data.name}. ${c.body ?? ''}`,
+  })),
+  ...notes.map((n) => ({
+    slug: n.id,
+    label: n.data.title,
+    body: `LECTURE NOTES. ${n.body ?? ''}`,
+  })),
+];
+---
+
+<Base
+  title="Studio"
+  description="Work out what content you are positioned to make, then turn it into concrete pieces."
+>
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">{sources.length} sources in your hub</p>
+      <h1>Studio</h1>
+      <p class="subtitle">
+        Two modes. Find the angle you are actually positioned to own, then turn it into
+        pieces you could make this week.
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="mode-tabs" role="tablist">
+      <button class="mode on" id="mode-angle" role="tab" aria-selected="true">
+        <Icon name="lucide:compass" /> Find my angle
+      </button>
+      <button class="mode" id="mode-ideas" role="tab" aria-selected="false">
+        <Icon name="lucide:clapperboard" /> Generate ideas
+      </button>
+    </div>
+
+    <div id="panel-angle">
+      <p class="panel-copy">
+        Reads everything in your hub and proposes directions with honest reasoning about
+        which ones you can own, then commits to a recommendation. Start here if you have
+        not settled on a direction.
+      </p>
+    </div>
+
+    <div id="panel-ideas" hidden>
+      <div class="fields">
+        <label class="field">
+          <span class="field-label">Direction (optional)</span>
+          <input id="direction" type="text" placeholder="e.g. building tools for my own degree" />
+        </label>
+        <label class="field">
+          <span class="field-label">Format</span>
+          <select id="format">
+            <option value="short-form video (reels, shorts): hooks, beats, shot lists">Short-form video</option>
+            <option value="long-form video (YouTube): structure, script beats, b-roll">Long-form video</option>
+            <option value="written posts and threads">Written posts</option>
+            <option value="a mix, whatever suits each idea best">Mixed</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <p class="actions-row">
+      <button class="btn" id="run"><Icon name="lucide:sparkles" /> Run</button>
+      <span class="meta" id="status"></span>
+    </p>
+    <div class="alert-error card-lite" id="error" hidden></div>
+  </div>
+
+  <div class="card" id="result-card" hidden>
+    <div class="card-row">
+      <h2>Result</h2>
+    </div>
+    <div class="prose" id="output"></div>
+    <p class="actions-row">
+      <button class="btn" id="save"><Icon name="lucide:upload" /> Save as idea</button>
+      <button class="btn-secondary" id="copy"><Icon name="lucide:copy" /> Copy</button>
+    </p>
+    <div class="alert-success card-lite" id="save-success" hidden>
+      Saved. Live in about two minutes at <a id="site-link" href="/">this page</a>.
+    </div>
+    <div class="alert-error card-lite" id="save-error" hidden></div>
+  </div>
+</Base>
+
+<style>
+  .mode-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border);
+    background: var(--surface-sunken);
+    color: var(--text-muted);
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .mode.on {
+    background: var(--surface);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-xs);
+  }
+  .mode svg {
+    width: 15px;
+    height: 15px;
+  }
+  .panel-copy {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+    max-width: 62ch;
+  }
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+  }
+  .field-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+  }
+  .field input,
+  .field select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    font-size: 14.5px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-family: inherit;
+  }
+  .field input:focus,
+  .field select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+  .actions-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 16px 0 0;
+  }
+  .card-lite {
+    margin-top: 14px;
+    padding: 13px 16px;
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    border: 1px solid transparent;
+  }
+  .alert-error.card-lite {
+    background: var(--critical-tint);
+    color: var(--critical);
+    border-color: var(--critical-tint-border);
+  }
+  .alert-success.card-lite {
+    background: var(--good-tint);
+    color: var(--good);
+    border-color: var(--good-tint-border);
+  }
+  .alert-success.card-lite a {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+  #result-card {
+    margin-top: 16px;
+  }
+</style>
+
+<script define:vars={{ sources }}>
+  window.__studioSources = sources;
+</script>
+
+<script>
+  import { marked } from 'marked';
+  import DOMPurify from 'dompurify';
+  import { findContentAngles, generateContentIdeas, saveIdea, type Source } from '../lib/ideas';
+
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
+    document.getElementById(id) as T;
+
+  const sources = (window as any).__studioSources as Source[];
+
+  const els = {
+    modeAngle: $<HTMLButtonElement>('mode-angle'),
+    modeIdeas: $<HTMLButtonElement>('mode-ideas'),
+    panelAngle: $('panel-angle'),
+    panelIdeas: $('panel-ideas'),
+    direction: $<HTMLInputElement>('direction'),
+    format: $<HTMLSelectElement>('format'),
+    run: $<HTMLButtonElement>('run'),
+    status: $('status'),
+    error: $('error'),
+    resultCard: $('result-card'),
+    output: $('output'),
+    save: $<HTMLButtonElement>('save'),
+    copy: $<HTMLButtonElement>('copy'),
+    saveSuccess: $('save-success'),
+    siteLink: $<HTMLAnchorElement>('site-link'),
+    saveError: $('save-error'),
+  };
+
+  let mode: 'angle' | 'ideas' = 'angle';
+  let markdown = '';
+
+  function setMode(next: 'angle' | 'ideas') {
+    mode = next;
+    els.modeAngle.classList.toggle('on', next === 'angle');
+    els.modeIdeas.classList.toggle('on', next === 'ideas');
+    els.modeAngle.setAttribute('aria-selected', String(next === 'angle'));
+    els.modeIdeas.setAttribute('aria-selected', String(next === 'ideas'));
+    els.panelAngle.hidden = next !== 'angle';
+    els.panelIdeas.hidden = next !== 'ideas';
+  }
+
+  els.modeAngle.addEventListener('click', () => setMode('angle'));
+  els.modeIdeas.addEventListener('click', () => setMode('ideas'));
+
+  els.run.addEventListener('click', async () => {
+    const key = localStorage.getItem('live.anthropicKey');
+    if (!key) {
+      els.error.hidden = false;
+      els.error.textContent =
+        'Add your Anthropic API key in the live recorder settings first, then come back.';
+      return;
+    }
+    els.run.disabled = true;
+    els.error.hidden = true;
+    els.status.textContent = 'thinking, this takes a moment';
+    try {
+      markdown =
+        mode === 'angle'
+          ? await findContentAngles({ apiKey: key, sources })
+          : await generateContentIdeas({
+              apiKey: key,
+              sources,
+              direction: els.direction.value.trim(),
+              format: els.format.value,
+            });
+      els.output.innerHTML = DOMPurify.sanitize(await marked.parse(markdown));
+      els.resultCard.hidden = false;
+      els.status.textContent = '';
+      els.save.disabled = !localStorage.getItem('live.githubToken');
+    } catch (err) {
+      els.error.hidden = false;
+      els.error.textContent = `Failed: ${err instanceof Error ? err.message : err}`;
+      els.status.textContent = '';
+    } finally {
+      els.run.disabled = false;
+    }
+  });
+
+  els.save.addEventListener('click', async () => {
+    const token = localStorage.getItem('live.githubToken');
+    if (!markdown) return;
+    if (!token) {
+      els.saveError.hidden = false;
+      els.saveError.textContent =
+        'No GitHub token saved. Add one in the live recorder settings to save ideas to the site, or use Copy.';
+      return;
+    }
+    els.save.disabled = true;
+    els.saveError.hidden = true;
+    try {
+      const result = await saveIdea({ token, markdown, kind: 'content', date: new Date() });
+      els.siteLink.href = result.siteUrl;
+      els.saveSuccess.hidden = false;
+    } catch (err) {
+      els.save.disabled = false;
+      els.saveError.hidden = false;
+      els.saveError.textContent = `Save failed: ${err instanceof Error ? err.message : err}`;
+    }
+  });
+
+  els.copy.addEventListener('click', async () => {
+    if (markdown) await navigator.clipboard.writeText(markdown);
+    els.status.textContent = 'copied';
+  });
+
+  (window as any).__studio = {
+    setMode,
+    sourceCount: sources.length,
+    setResult(md: string) {
+      markdown = md;
+      els.output.innerHTML = DOMPurify.sanitize(marked.parse(md) as string);
+      els.resultCard.hidden = false;
+    },
+  };
+</script>

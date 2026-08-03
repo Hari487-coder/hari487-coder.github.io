@@ -49,7 +49,33 @@ export interface Meeting {
   end: string;
 }
 
-export function meetingsFor(slot: string | undefined): Meeting[] {
+/**
+ * Real meeting times for a course. An explicit `meetings` list always wins:
+ * instructors announce changes that the published slot grid does not carry
+ * (SE5723 runs Mon 08:00 to 10:00, where slot A would say 09:00).
+ */
+export function meetingsFor(
+  slot: string | undefined,
+  override?: Meeting[],
+): Meeting[] {
+  if (override?.length) return override;
   if (!slot || !SLOTS[slot]) return [];
   return SLOTS[slot].map(([day, start]) => ({ day, start, end: ENDS[start] ?? start }));
+}
+
+/** "08:00" -> "8:00 AM" */
+export function to12h(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const suffix = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${suffix}`;
+}
+
+/** "08:00" + "10:00" -> "8:00 to 10:00 AM", collapsing a shared suffix. */
+export function rangeLabel(start: string, end: string): string {
+  const a = to12h(start);
+  const b = to12h(end);
+  const suffixA = a.slice(-2);
+  const suffixB = b.slice(-2);
+  return suffixA === suffixB ? `${a.slice(0, -3)} to ${b}` : `${a} to ${b}`;
 }
