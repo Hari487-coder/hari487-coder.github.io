@@ -145,6 +145,7 @@ edit, commit, push, and the site matches.
 - **The matching rule is duplicated on purpose** in `wikilink.mjs` (runs in Vite, reads
   content from disk) and `src/lib/links.ts` (runs in Astro, uses getCollection). If you
   change normalization in one, change it in the other or links and graph edges drift.
+- Paired pages share a tab bar (`src/components/SubTabs.astro`, sets in `src/lib/subnav.ts`): Courses+Timetable, Assignments+Classroom, Notes+Record+Import. Each pair is ONE sidebar item; add a page to a pair by adding a tab there, not a nav row.
 - **`/graph/`** renders every entry as a node (courses iris, notes green, assignments
   amber, projects ink) with wikilink + structural edges, using bundled `d3-force` on a
   canvas. Gotcha baked in: the simulation is rAF-driven and browsers pause rAF in hidden

@@ -2,7 +2,8 @@
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Base from '../../../layouts/Base.astro';
-import CaptureTabs from '../../../components/CaptureTabs.astro';
+import SubTabs from '../../../components/SubTabs.astro';
+import { NOTE_TABS } from '../../../lib/subnav';
 import { fmt } from '../../../lib/dates';
 import { CATEGORY_LIST } from '../../../lib/categories';
 
@@ -48,7 +49,7 @@ for (const n of allNotes) {
     </div>
   </div>
 
-  <CaptureTabs active="record" />
+  <SubTabs tabs={NOTE_TABS} active="record" />
 
   <div class="alert-info card" id="unsupported" hidden>
     This browser has no speech recognition. Open this page in Chrome on your laptop or

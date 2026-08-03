@@ -1,40 +1,37 @@
 ---
 import { Icon } from 'astro-icon/components';
+import type { Tab } from '../lib/subnav';
 
 interface Props {
-  active: 'record' | 'import';
+  tabs: Tab[];
+  active: string;
 }
 
-const { active } = Astro.props;
+const { tabs, active } = Astro.props;
 ---
 
-<div class="capture-tabs" role="tablist" aria-label="Capture mode">
-  <a
-    class:list={['capture-tab', { on: active === 'record' }]}
-    href="/iith/capture/"
-    role="tab"
-    aria-selected={active === 'record'}
-  >
-    <Icon name="lucide:mic" /> Record live
-  </a>
-  <a
-    class:list={['capture-tab', { on: active === 'import' }]}
-    href="/iith/capture/import/"
-    role="tab"
-    aria-selected={active === 'import'}
-  >
-    <Icon name="lucide:file-up" /> Import files
-  </a>
+<div class="subtabs" role="tablist">
+  {tabs.map((tab) => (
+    <a
+      class:list={['subtab', { on: tab.key === active }]}
+      href={tab.href}
+      role="tab"
+      aria-selected={tab.key === active}
+    >
+      <Icon name={tab.icon} />
+      {tab.label}
+    </a>
+  ))}
 </div>
 
 <style>
-  .capture-tabs {
+  .subtabs {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     margin-bottom: 18px;
   }
-  .capture-tab {
+  .subtab {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -47,16 +44,16 @@ const { active } = Astro.props;
     font-weight: 600;
     text-decoration: none;
   }
-  .capture-tab:hover {
+  .subtab:hover {
     color: var(--text-primary);
   }
-  .capture-tab.on {
+  .subtab.on {
     background: var(--surface);
     color: var(--text-primary);
     border-color: var(--border-strong);
     box-shadow: var(--shadow-xs);
   }
-  .capture-tab svg {
+  .subtab svg {
     width: 15px;
     height: 15px;
   }

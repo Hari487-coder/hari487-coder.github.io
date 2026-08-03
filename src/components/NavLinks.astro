@@ -28,14 +28,31 @@ const groups: { label: string; links: Link[] }[] = [
     ],
   },
   {
+    // Three doors, each opening on a pair of tabbed pages (see lib/subnav.ts).
     label: 'IIT manager',
     links: [
-      { href: '/iith/', label: 'Courses', icon: 'lucide:graduation-cap', match: (p) => p === '/iith/' || p.startsWith('/iith/courses') },
-      { href: '/iith/timetable/', label: 'Timetable', icon: 'lucide:calendar-days', match: (p) => p.startsWith('/iith/timetable') },
-      { href: '/iith/assignments/', label: 'Assignments', icon: 'lucide:list-checks', match: (p) => p.startsWith('/iith/assignments') },
-      { href: '/notes/', label: 'Notes', icon: 'lucide:notebook-pen', match: (p) => p.startsWith('/notes') || p.startsWith('/iith/brainstorm') },
-      { href: '/iith/capture/', label: 'Capture', icon: 'lucide:mic', match: (p) => p.startsWith('/iith/capture') },
-      { href: '/iith/inbox/', label: 'Classroom', icon: 'lucide:inbox', match: (p) => p.startsWith('/iith/inbox') },
+      {
+        href: '/iith/',
+        label: 'Courses',
+        icon: 'lucide:graduation-cap',
+        match: (p) =>
+          p === '/iith/' || p.startsWith('/iith/courses') || p.startsWith('/iith/timetable'),
+      },
+      {
+        href: '/iith/assignments/',
+        label: 'Assignments',
+        icon: 'lucide:list-checks',
+        match: (p) => p.startsWith('/iith/assignments') || p.startsWith('/iith/inbox'),
+      },
+      {
+        href: '/notes/',
+        label: 'Notes',
+        icon: 'lucide:notebook-pen',
+        match: (p) =>
+          p.startsWith('/notes') ||
+          p.startsWith('/iith/capture') ||
+          p.startsWith('/iith/brainstorm'),
+      },
     ],
   },
   {

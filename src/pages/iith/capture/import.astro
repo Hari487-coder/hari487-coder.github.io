@@ -2,7 +2,8 @@
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Base from '../../../layouts/Base.astro';
-import CaptureTabs from '../../../components/CaptureTabs.astro';
+import SubTabs from '../../../components/SubTabs.astro';
+import { NOTE_TABS } from '../../../lib/subnav';
 import { CATEGORY_LIST } from '../../../lib/categories';
 
 const courses = (await getCollection('courses')).sort((a, b) => {
@@ -29,7 +30,7 @@ const courseOptions = courses.map((c) => ({ id: c.id, code: c.data.code, name: c
     </div>
   </div>
 
-  <CaptureTabs active="import" />
+  <SubTabs tabs={NOTE_TABS} active="import" />
 
   <div class="card">
     <div class="controls">

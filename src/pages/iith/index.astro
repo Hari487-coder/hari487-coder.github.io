@@ -1,6 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import SubTabs from '../../components/SubTabs.astro';
+import { COURSE_TABS } from '../../lib/subnav';
 import StatusBadge from '../../components/StatusBadge.astro';
 import { credits as fmtCredits } from '../../lib/format';
 
@@ -29,6 +31,8 @@ const COURSE_BADGE = {
       <p class="subtitle">M.Tech Techno-Entrepreneurship, July 2026 onward.</p>
     </div>
   </div>
+
+  <SubTabs tabs={COURSE_TABS} active="courses" />
 
   {bySemester.map(({ semester, list, total }) => (
     <section class="section">

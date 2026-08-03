@@ -2,6 +2,8 @@
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Base from '../../layouts/Base.astro';
+import SubTabs from '../../components/SubTabs.astro';
+import { COURSE_TABS } from '../../lib/subnav';
 import { DAYS, TERM, meetingsFor, rangeLabel, to12h } from '../../lib/slots';
 import { credits as fmtCredits } from '../../lib/format';
 
@@ -83,6 +85,8 @@ const exportRows = scheduled.flatMap(({ course, meetings }) =>
       <Icon name="lucide:calendar-plus" /> Add to calendar
     </button>
   </div>
+
+  <SubTabs tabs={COURSE_TABS} active="timetable" />
 
   <div class="card tt-card">
     <div class="tt-scroll">

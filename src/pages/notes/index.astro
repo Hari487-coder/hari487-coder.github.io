@@ -2,6 +2,8 @@
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Base from '../../layouts/Base.astro';
+import SubTabs from '../../components/SubTabs.astro';
+import { NOTE_TABS } from '../../lib/subnav';
 import { fmt } from '../../lib/dates';
 import { CATEGORY_LIST } from '../../lib/categories';
 
@@ -32,6 +34,8 @@ const sections = CATEGORY_LIST.map((meta) => ({
       <Icon name="lucide:brain" /> Brainstorm from notes
     </a>
   </div>
+
+  <SubTabs tabs={NOTE_TABS} active="notes" />
 
   {notes.length === 0 && (
     <div class="card">

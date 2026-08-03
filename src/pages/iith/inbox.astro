@@ -2,6 +2,8 @@
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Base from '../../layouts/Base.astro';
+import SubTabs from '../../components/SubTabs.astro';
+import { WORK_TABS } from '../../lib/subnav';
 
 const courses = (await getCollection('courses')).sort((a, b) =>
   a.data.code.localeCompare(b.data.code),
@@ -15,13 +17,13 @@ const trackedTitles = assignments.map((a) =>
 ---
 
 <Base
-  title="Inbox"
+  title="Classroom"
   description="What needs attention: pending Google Classroom work and important IITH mail, live."
 >
   <div class="page-head">
     <div class="page-head-text">
       <p class="eyebrow">IIT Hyderabad</p>
-      <h1>Inbox</h1>
+      <h1>Classroom</h1>
       <p class="subtitle">
         Pending Classroom work and mail that needs attention, pulled live from your IITH
         Google account. Nothing is stored anywhere.
@@ -31,6 +33,8 @@ const trackedTitles = assignments.map((a) =>
       <Icon name="lucide:refresh-cw" /> Refresh
     </button>
   </div>
+
+  <SubTabs tabs={WORK_TABS} active="classroom" />
 
   <div class="card" id="connect-card">
     <div class="card-row">

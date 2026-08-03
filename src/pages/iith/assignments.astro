@@ -2,6 +2,8 @@
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Base from '../../layouts/Base.astro';
+import SubTabs from '../../components/SubTabs.astro';
+import { WORK_TABS } from '../../lib/subnav';
 import AssignmentRow from '../../components/AssignmentRow.astro';
 import { daysLeft, fmt, isOverdue, todayIST } from '../../lib/dates';
 
@@ -54,6 +56,8 @@ const groups = [
       <p class="subtitle">Everything owed and everything cleared, across all courses.</p>
     </div>
   </div>
+
+  <SubTabs tabs={WORK_TABS} active="assignments" />
 
   {groups.map(({ title, items, empty }) => (
     <section class="section">
