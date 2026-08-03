@@ -234,8 +234,8 @@ fetched live in the browser. One-click "Track on site" turns a Classroom item in
 
 ## Notes and their four sections
 
-Every note carries a `category`: `projects`, `workspace`, `iith`, or `content` (defined
-once in `src/lib/categories.ts`). `/notes/` lists all four sections; notes live at
+Every note carries a `category`: `workspace`, `iith`, or `content` (defined
+once in `src/lib/categories.ts`). `/notes/` lists all three sections; notes live at
 `/notes/<slug>/` regardless of category. Only `iith` notes carry a `course` reference,
 so anything reading `note.data.course` must treat it as optional.
 

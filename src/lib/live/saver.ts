@@ -53,7 +53,6 @@ export function buildMarkdown(
 }
 
 const CATEGORY_TITLE: Record<string, string> = {
-  projects: 'Project notes',
   workspace: 'Work notes',
   iith: 'Lecture notes',
   content: 'Content notes',

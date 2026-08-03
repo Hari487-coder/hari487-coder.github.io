@@ -63,7 +63,7 @@ const notes = defineCollection({
   schema: z.object({
     title: z.string(),
     /** Which part of the hub this note belongs to. */
-    category: z.enum(['projects', 'workspace', 'iith', 'content']).default('iith'),
+    category: z.enum(['workspace', 'iith', 'content']).default('iith'),
     /** Only meaningful for iith notes; other categories have no course. */
     course: reference('courses').optional(),
     date: z.coerce.date(),

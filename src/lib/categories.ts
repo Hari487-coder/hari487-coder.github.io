@@ -1,7 +1,7 @@
 // Notes are not only coursework. The hub captures four kinds of thinking, and
 // every note belongs to exactly one of them.
 
-export const CATEGORIES = ['projects', 'workspace', 'iith', 'content'] as const;
+export const CATEGORIES = ['workspace', 'iith', 'content'] as const;
 
 export type Category = (typeof CATEGORIES)[number];
 
@@ -15,13 +15,6 @@ export interface CategoryMeta {
 }
 
 export const CATEGORY_META: Record<Category, CategoryMeta> = {
-  projects: {
-    id: 'projects',
-    label: 'Projects I build',
-    blurb: 'Working notes on the things you are building.',
-    icon: 'lucide:wrench',
-    course: false,
-  },
   workspace: {
     id: 'workspace',
     label: 'Workspace',
