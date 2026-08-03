@@ -112,12 +112,12 @@ const sources = [
       <h2>Saved ideas</h2>
       <span class="meta">{savedIdeas.length}</span>
     </div>
-    <div class="card">
-      {savedIdeas.length === 0 ? (
-        <p class="meta" style="margin: 0;">
-          Nothing saved yet. Run either mode above, then press Save as idea.
-        </p>
-      ) : (
+    {savedIdeas.length === 0 ? (
+      <p class="section-empty">
+        Nothing saved yet. Run either mode above, then press Save as idea.
+      </p>
+    ) : (
+      <div class="card flush">
         <ul class="row-list" style="margin-top: 0;">
           {savedIdeas.map((idea) => (
             <li>
@@ -133,8 +133,8 @@ const sources = [
             </li>
           ))}
         </ul>
-      )}
-    </div>
+      </div>
+    )}
   </section>
 </Base>
 

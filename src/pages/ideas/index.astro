@@ -47,12 +47,12 @@ const groups = [
           <h2>{group.title}</h2>
           <span class="meta">{list.length}</span>
         </div>
-        <div class="card">
-          {list.length === 0 ? (
-            <p class="meta" style="margin: 0;">
-              {group.empty} <a href={group.href}>{group.cta}</a>
-            </p>
-          ) : (
+        {list.length === 0 ? (
+          <p class="section-empty">
+            {group.empty} <a href={group.href}>{group.cta}</a>
+          </p>
+        ) : (
+          <div class="card flush">
             <ul class="row-list" style="margin-top: 0;">
               {list.map((idea) => (
                 <li>
@@ -69,8 +69,8 @@ const groups = [
                 </li>
               ))}
             </ul>
-          )}
-        </div>
+          </div>
+        )}
       </section>
     );
   })}

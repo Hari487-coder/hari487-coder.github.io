@@ -123,9 +123,30 @@ platform's design evolves and Hari wants parity, re-port tokens from there.
   JetBrains Mono (data: dates, codes, stacks). Never a serif.
 - Icons: lucide via astro-icon (`lucide:*`); never emoji-as-icon. Project cards take an
   `icon` frontmatter field (lucide name).
-- Components: .card / .card-interactive, .badge (good/warning/critical/accent + dot),
-  .stat-tile, .market-grid + .market-card (projects), .row-list rows, .page-head with
-  .eyebrow + h1 + .subtitle, .empty-state. Reuse these; do not invent parallel ones.
+- Components: .card / .card-interactive / .card.flush, .badge (good/warning/critical/accent
+  + dot), .stat-grid + .stat-tile, .market-grid + .market-card (projects), .row-list rows,
+  .page-head with .eyebrow + h1 + .subtitle, .empty-state, .section-empty. Reuse these;
+  do not invent parallel ones.
+
+### Surface discipline (the 2026-08-03 refinement; do not undo)
+
+The site drifted into a stack of white slabs. Four rules keep it calm:
+
+1. **Cards have a border, never a resting shadow.** White on the lavender page is
+   already separation. Elevation is spent only on hover of something clickable
+   (`.card-interactive`). Adding `box-shadow` to `.card` puts the slabs back.
+2. **A card that holds only a `.row-list` gets `.card flush`** (5px vertical padding
+   instead of 22px), so the rows set the rhythm rather than nesting inside a box.
+3. **An empty section gets `.section-empty`, a line of muted text, not an empty card.**
+   Pages where EVERY section is empty still show one composed `.empty-state`
+   (see `iith/assignments.astro`'s `allEmpty`, `notes/index.astro`'s `notes.length > 0`).
+4. **Section headings are quiet uppercase labels, not a second display face.** Exactly
+   one loud thing per page: the h1. Row titles carry the content weight.
+
+`.stat-grid` is ONE surface, not four cards: tiles are cells, and the dividers come from
+a 1px grid gap over a border-coloured background. That is the only technique that stays
+correct when the grid wraps to two rows or collapses to one column, so do not swap it for
+`border-left` + `:first-child`. `StatTile` must not carry `.card`.
 - ZERO em/en dashes in visible text. Hyphens only. (Check: search dist for the chars.)
 - All motion behind prefers-reduced-motion (global 0.001ms override matches platform).
 - Known inherited contrast margins (platform-shipped, kept for fidelity): warning/critical
