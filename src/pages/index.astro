@@ -7,6 +7,7 @@ import ProjectCard from '../components/ProjectCard.astro';
 import StatTile from '../components/StatTile.astro';
 import StatusBadge from '../components/StatusBadge.astro';
 import { daysLeft, fmt, isDueSoon, isOverdue, stamp, todayIST } from '../lib/dates';
+import { credits } from '../lib/format';
 
 const today = todayIST();
 
@@ -98,7 +99,7 @@ const liveCount = projects.filter((p) => p.data.status === 'live').length;
             <div class="row-main">
               <a class="row-title" href={`/iith/courses/${c.id}/`}>{c.data.name}</a>
               <div class="row-sub">
-                {c.data.code}{c.data.slot ? ` · Slot ${c.data.slot}` : ''} · {c.data.credits} credits
+                {c.data.code}{c.data.slot ? ` · Slot ${c.data.slot}` : ''} · {credits(c.data.credits)}
               </div>
             </div>
             <div class="row-side">

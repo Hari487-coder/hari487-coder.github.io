@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
+import { credits as fmtCredits } from '../../lib/format';
 
 const courses = await getCollection('courses');
 
@@ -10,7 +11,7 @@ const bySemester = semesters.map((s) => {
   const list = courses
     .filter((c) => c.data.semester === s)
     .sort((a, b) => a.data.code.localeCompare(b.data.code));
-  return { semester: s, list, credits: list.reduce((sum, c) => sum + c.data.credits, 0) };
+  return { semester: s, list, total: list.reduce((sum, c) => sum + c.data.credits, 0) };
 });
 
 const COURSE_BADGE = {
@@ -29,11 +30,11 @@ const COURSE_BADGE = {
     </div>
   </div>
 
-  {bySemester.map(({ semester, list, credits }) => (
+  {bySemester.map(({ semester, list, total }) => (
     <section class="section">
       <div class="section-head">
         <h2>Semester {semester}</h2>
-        <span class="meta">{credits} credits</span>
+        <span class="meta">{fmtCredits(total)}</span>
       </div>
       <div class="card">
         <ul class="row-list" style="margin-top: 0;">
@@ -42,7 +43,7 @@ const COURSE_BADGE = {
               <div class="row-main">
                 <a class="row-title" href={`/iith/courses/${c.id}/`}>{c.data.name}</a>
                 <div class="row-sub">
-                  {c.data.code}{c.data.slot ? ` · Slot ${c.data.slot}` : ''} · {c.data.credits} credits
+                  {c.data.code}{c.data.slot ? ` · Slot ${c.data.slot}` : ''} · {fmtCredits(c.data.credits)}
                   {c.data.instructor ? ` · ${c.data.instructor}` : ''}
                 </div>
               </div>

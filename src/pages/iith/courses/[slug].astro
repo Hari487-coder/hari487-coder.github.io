@@ -5,6 +5,7 @@ import AssignmentRow from '../../../components/AssignmentRow.astro';
 import Backlinks from '../../../components/Backlinks.astro';
 import StatusBadge from '../../../components/StatusBadge.astro';
 import { daysLeft, fmt, isOverdue, todayIST } from '../../../lib/dates';
+import { credits } from '../../../lib/format';
 
 export async function getStaticPaths() {
   const courses = await getCollection('courses');
@@ -39,7 +40,7 @@ const badge = course.data.status === 'ongoing'
       <p class="eyebrow">{course.data.code}{course.data.slot ? ` · Slot ${course.data.slot}` : ''}</p>
       <h1>{course.data.name}</h1>
       <p class="subtitle">
-        Semester {course.data.semester} · {course.data.credits} credits
+        Semester {course.data.semester} · {credits(course.data.credits)}
         {course.data.instructor ? ` · ${course.data.instructor}` : ''}
       </p>
     </div>
