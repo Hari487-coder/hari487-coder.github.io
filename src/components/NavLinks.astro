@@ -3,42 +3,66 @@ import { Icon } from 'astro-icon/components';
 
 const path = Astro.url.pathname;
 
-const workspace = [
-  { href: '/', label: 'Home', icon: 'lucide:layout-dashboard', match: (p: string) => p === '/' },
-  { href: '/projects/', label: 'Projects', icon: 'lucide:wrench', match: (p: string) => p.startsWith('/projects') },
-  { href: '/notes/', label: 'Notes', icon: 'lucide:notebook-pen', match: (p: string) => p.startsWith('/notes') },
-  { href: '/ideas/', label: 'Ideas', icon: 'lucide:lightbulb', match: (p: string) => p.startsWith('/ideas') },
-  { href: '/studio/', label: 'Studio', icon: 'lucide:clapperboard', match: (p: string) => p.startsWith('/studio') },
-  { href: '/graph/', label: 'Graph', icon: 'lucide:share-2', match: (p: string) => p.startsWith('/graph') },
-  { href: '/about/', label: 'About', icon: 'lucide:user', match: (p: string) => p.startsWith('/about') },
-];
+interface Link {
+  href: string;
+  label: string;
+  icon: string;
+  match: (p: string) => boolean;
+}
 
-const iith = [
-  { href: '/iith/', label: 'Courses', icon: 'lucide:graduation-cap', match: (p: string) => p === '/iith/' || p.startsWith('/iith/courses') },
-  { href: '/iith/timetable/', label: 'Timetable', icon: 'lucide:calendar-days', match: (p: string) => p.startsWith('/iith/timetable') },
-  { href: '/iith/assignments/', label: 'Assignments', icon: 'lucide:list-checks', match: (p: string) => p.startsWith('/iith/assignments') },
-  { href: '/iith/live/', label: 'Live notes', icon: 'lucide:mic', match: (p: string) => p.startsWith('/iith/live') },
-  { href: '/iith/import/', label: 'Import to notes', icon: 'lucide:file-up', match: (p: string) => p.startsWith('/iith/import') },
-  { href: '/iith/brainstorm/', label: 'Brainstorm', icon: 'lucide:brain', match: (p: string) => p.startsWith('/iith/brainstorm') },
-  { href: '/iith/inbox/', label: 'Inbox', icon: 'lucide:inbox', match: (p: string) => p.startsWith('/iith/inbox') },
+/**
+ * Three sections to navigate and manage from. The capture tools (Live notes,
+ * Import) sit in Workspace rather than IITH because they now record into any
+ * section, not only coursework.
+ */
+const groups: { label: string; links: Link[] }[] = [
+  {
+    label: 'Workspace',
+    links: [
+      { href: '/', label: 'Home', icon: 'lucide:layout-dashboard', match: (p) => p === '/' },
+      { href: '/notes/', label: 'Notes', icon: 'lucide:notebook-pen', match: (p) => p.startsWith('/notes') },
+      { href: '/iith/live/', label: 'Live notes', icon: 'lucide:mic', match: (p) => p.startsWith('/iith/live') },
+      { href: '/iith/import/', label: 'Import to notes', icon: 'lucide:file-up', match: (p) => p.startsWith('/iith/import') },
+      { href: '/projects/', label: 'Projects', icon: 'lucide:wrench', match: (p) => p.startsWith('/projects') },
+      { href: '/graph/', label: 'Graph', icon: 'lucide:share-2', match: (p) => p.startsWith('/graph') },
+      { href: '/about/', label: 'About', icon: 'lucide:user', match: (p) => p.startsWith('/about') },
+    ],
+  },
+  {
+    label: 'IIT manager',
+    links: [
+      { href: '/iith/', label: 'Courses', icon: 'lucide:graduation-cap', match: (p) => p === '/iith/' || p.startsWith('/iith/courses') },
+      { href: '/iith/timetable/', label: 'Timetable', icon: 'lucide:calendar-days', match: (p) => p.startsWith('/iith/timetable') },
+      { href: '/iith/assignments/', label: 'Assignments', icon: 'lucide:list-checks', match: (p) => p.startsWith('/iith/assignments') },
+      { href: '/iith/brainstorm/', label: 'Brainstorm', icon: 'lucide:brain', match: (p) => p.startsWith('/iith/brainstorm') },
+      { href: '/iith/inbox/', label: 'Inbox', icon: 'lucide:inbox', match: (p) => p.startsWith('/iith/inbox') },
+    ],
+  },
+  {
+    label: 'Content creation',
+    links: [
+      { href: '/studio/', label: 'Studio', icon: 'lucide:clapperboard', match: (p) => p.startsWith('/studio') },
+      { href: '/ideas/', label: 'Ideas', icon: 'lucide:lightbulb', match: (p) => p.startsWith('/ideas') },
+    ],
+  },
 ];
 ---
 
 <nav class="sidebar-nav" aria-label="Main">
-  <p class="sidebar-section-label">Workspace</p>
-  {workspace.map(({ href, label, icon, match }) => (
-    <a href={href} class:list={['sidebar-link', { active: match(path) }]} aria-current={match(path) ? 'page' : undefined}>
-      <Icon name={icon} />
-      {label}
-    </a>
-  ))}
-
-  <p class="sidebar-section-label">IITH</p>
-  {iith.map(({ href, label, icon, match }) => (
-    <a href={href} class:list={['sidebar-link', { active: match(path) }]} aria-current={match(path) ? 'page' : undefined}>
-      <Icon name={icon} />
-      {label}
-    </a>
+  {groups.map((group) => (
+    <>
+      <p class="sidebar-section-label">{group.label}</p>
+      {group.links.map(({ href, label, icon, match }) => (
+        <a
+          href={href}
+          class:list={['sidebar-link', { active: match(path) }]}
+          aria-current={match(path) ? 'page' : undefined}
+        >
+          <Icon name={icon} />
+          {label}
+        </a>
+      ))}
+    </>
   ))}
 </nav>
 

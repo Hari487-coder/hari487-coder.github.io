@@ -391,13 +391,17 @@ a {
   overflow-y: auto;
   flex-direction: column;
 }
-html[data-drawer="open"] .dialog-overlay {
-  display: block;
-  animation: overlay-in 0.18s ease both;
-}
-html[data-drawer="open"] .mobile-drawer {
-  display: flex;
-  animation: drawer-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+/* Width-guarded: an open drawer must not survive a resize onto desktop, where
+   the persistent rail is already showing. */
+@media (max-width: 960px) {
+  html[data-drawer="open"] .dialog-overlay {
+    display: block;
+    animation: overlay-in 0.18s ease both;
+  }
+  html[data-drawer="open"] .mobile-drawer {
+    display: flex;
+    animation: drawer-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
 }
 @keyframes overlay-in {
   from { opacity: 0; }
