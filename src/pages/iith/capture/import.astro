@@ -66,8 +66,8 @@ const courseOptions = courses.map((c) => ({ id: c.id, code: c.data.code, name: c
       <Icon name="lucide:upload-cloud" />
       <p><strong>Drop files here</strong> or <button class="linklike" id="pick">choose files</button></p>
       <p class="meta">
-        Photos (jpg, png, heic-converted), PDFs, and audio (m4a, mp3, wav, webm).
-        Several photos of one lecture become one note.
+        Photos (jpg, png, heic-converted), PDFs, and audio (m4a, mp3, wav, aac, ogg,
+        opus, webm, flac). Several photos of one lecture become one note.
       </p>
       <input id="file-input" type="file" multiple accept="image/*,application/pdf,audio/*" hidden />
     </div>
@@ -265,7 +265,7 @@ const courseOptions = courses.map((c) => ({ id: c.id, code: c.data.code, name: c
   import { marked } from 'marked';
   import DOMPurify from 'dompurify';
   import { imageBlock, kindOf, pdfBlock, type Kind } from '../../../lib/import/files';
-  import { transcribe } from '../../../lib/import/transcribe';
+  import { decodeAudio, transcribe } from '../../../lib/import/transcribe';
   import { notesFromSources } from '../../../lib/live/notesEngine';
   import { saveToRepo, downloadMd } from '../../../lib/live/saver';
   import type { LiveSession } from '../../../lib/live/session';
@@ -537,6 +537,9 @@ const courseOptions = courses.map((c) => ({ id: c.id, code: c.data.code, name: c
     },
     addFiles,
     transcribe,
+    // Decoding is the step that broke on long lectures, so it is reachable on
+    // its own: it needs no API key, no model download, and no microphone.
+    decodeAudio,
     imageBlock,
     pdfBlock,
     kindOf,

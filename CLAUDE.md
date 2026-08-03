@@ -205,6 +205,20 @@ the same path as the live recorder.
   Anthropic and GitHub tokens. All `ort-wasm-*` variants are copied because the runtime
   picks one from browser capabilities (Chrome with WebGPU fetches `asyncify`); shipping
   a subset means some browsers fail with "no available backend found".
+- **Chrome will not decode more than 2^28 sample frames per channel in one
+  `decodeAudioData` call**, and it decodes at the FILE's own sample rate before
+  resampling to our 16 kHz context, so the ceiling is roughly 101 min at 44.1 kHz,
+  93 min at 48 kHz, and 4.6 h at 16 kHz. Channel count does not count against it
+  (60 min of 44.1 kHz stereo decodes fine). Over the line it throws a bare
+  `EncodingError: Unable to decode audio data`, which looks exactly like an
+  unsupported codec and cost a debugging session once already. Measured Chrome
+  2026-08: 100.3 min mono decodes, 105 min does not.
+  `src/lib/import/adts.ts` walks ADTS frame headers so a long raw `.aac` can be cut
+  at syncwords into 10 minute pieces that each decode on their own; the seam costs
+  a ~7% amplitude dip in one 50 ms window and no silence at all. **MP4/M4A cannot be
+  byte-sliced** (it needs a real demuxer), so those still fail over the ceiling and
+  get an error that says so and suggests splitting or re-encoding to 16 kHz mono.
+  Never tell the user to convert to WAV: the limit is on samples, not file size.
 - **Gotcha: audio import does not work under `npm run dev`.** Vite tries to transform
   the runtime's `.mjs` glue and returns 500 for `/ort/...mjs?import`. Photos and PDFs
   are fine in dev; to exercise audio locally use `npm run build && npm run preview`.
