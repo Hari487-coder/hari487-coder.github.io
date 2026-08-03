@@ -156,6 +156,39 @@ edit, commit, push, and the site matches.
 - Astro 7 note: remark plugins require `@astrojs/markdown-remark` to be installed
   explicitly, since Astro 7's default markdown processor is no longer unified-based.
 
+## Timetable (`/iith/timetable/`)
+
+Weekly grid built from `src/lib/slots.ts` (the IITH slot grid, ported from the
+iith-course-planner project with its provenance noted) crossed with each course's
+`slot`. Also exports the whole semester as an .ics with weekly recurrence to the term
+end. Courses without a slot are listed separately rather than silently dropped. To roll
+to a new term, re-derive the slot grid and `TERM` from the published timetables.
+
+## Import to notes (`/iith/import/`)
+
+Photos, PDFs, and recordings become one set of notes for a lecture, then save through
+the same path as the live recorder.
+
+- Photos and PDFs go straight to Claude with the key in localStorage. Photos are
+  downscaled to a 1600px long edge and re-encoded as JPEG first (a phone photo is
+  ~4000px and gains the model nothing, and the request has a 32MB ceiling).
+- Audio cannot go to Claude at all: it has no audio input. Whisper
+  (`onnx-community/whisper-base.en`) runs locally via `@huggingface/transformers`, and
+  only the transcript is sent on.
+- **Model choice is deliberate**: one-shot imports use `claude-opus-5` (quality, runs
+  once per lecture), while the live recorder's 90-second loop uses Haiku.
+- **The ONNX runtime WASM is served from this origin**, copied out of node_modules at
+  build time by `scripts/copy-ort.mjs` into the gitignored `public/ort/`. Never point
+  `wasmPaths` at a CDN: any code on this origin can read the localStorage holding the
+  Anthropic and GitHub tokens. All `ort-wasm-*` variants are copied because the runtime
+  picks one from browser capabilities (Chrome with WebGPU fetches `asyncify`); shipping
+  a subset means some browsers fail with "no available backend found".
+- **Gotcha: audio import does not work under `npm run dev`.** Vite tries to transform
+  the runtime's `.mjs` glue and returns 500 for `/ort/...mjs?import`. Photos and PDFs
+  are fine in dev; to exercise audio locally use `npm run build && npm run preview`.
+- File classification falls back to the extension, since phone recordings often arrive
+  with an empty MIME type.
+
 ## IITH Inbox (`/iith/inbox/`)
 
 Client-side page connecting Hari's IITH Google account: pending Classroom work (state

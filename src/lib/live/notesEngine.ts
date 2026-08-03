@@ -76,3 +76,73 @@ export async function updateNotes(args: {
 
   return { notes: text, cursor: full.length };
 }
+
+/**
+ * One-shot notes from uploaded material: slide photos, PDFs, or a transcript
+ * produced locally from a recording.
+ *
+ * Uses Opus rather than the live loop's Haiku on purpose. This runs once per
+ * lecture instead of every 90 seconds, so the quality is worth the few cents,
+ * and reading dense slides is a harder task than extending existing notes.
+ */
+export async function notesFromSources(args: {
+  apiKey: string;
+  courseCode: string;
+  courseName: string;
+  topic: string;
+  blocks: unknown[];
+  sourceSummary: string;
+}): Promise<string> {
+  const { apiKey, courseCode, courseName, topic, blocks, sourceSummary } = args;
+  if (!blocks.length) throw new Error('nothing to convert');
+
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true, maxRetries: 1 });
+
+  const system = [
+    'You turn raw lecture material into a single set of clean, structured study notes.',
+    `Course: ${courseCode} ${courseName}.`,
+    topic ? `Topic: ${topic}.` : '',
+    '',
+    'The material may be photos of slides or a blackboard, PDF handouts, or a',
+    'speech-to-text transcript of a recording. Treat everything provided as ONE',
+    'lecture and produce ONE coherent set of notes, not a per-file summary.',
+    '',
+    'Rules:',
+    '- Structure with ## headings by topic; use bullets, definitions, formulas and worked examples.',
+    '- Transcribe formulas, diagrams and tables faithfully. Describe a diagram in words when it carries meaning.',
+    '- Fix obvious speech-to-text and OCR errors from context, especially technical terms.',
+    '- If the material flags something as important, examinable, or an action item, collect those under a final "## Exam and action items" section.',
+    '- If something is genuinely unreadable, write "(unclear in source)" rather than guessing. Never invent content that is not there.',
+    '- Never use em dashes or en dashes; use hyphens or commas.',
+    '- Output Markdown only, no preamble.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const response = await client.messages.create({
+    model: 'claude-opus-5',
+    max_tokens: 8000,
+    system,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          ...(blocks as any[]),
+          {
+            type: 'text',
+            text: `The material above is ${sourceSummary}. Produce the complete lecture notes in Markdown.`,
+          },
+        ],
+      },
+    ],
+  });
+
+  const text = response.content
+    .filter((b): b is Extract<typeof b, { type: 'text' }> => b.type === 'text')
+    .map((b) => b.text)
+    .join('')
+    .trim();
+
+  if (!text) throw new Error('empty notes response');
+  return text;
+}

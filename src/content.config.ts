@@ -10,6 +10,7 @@ const courses = defineCollection({
     semester: z.number().int().min(1).max(4),
     credits: z.number().positive(),
     slot: z.string().optional(),
+    room: z.string().optional(),
     instructor: z.string().optional(),
     status: z.enum(['ongoing', 'done', 'planned']),
   }),

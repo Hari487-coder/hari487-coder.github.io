@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-ort.mjs",
     "dev": "astro dev",
+    "prebuild": "node scripts/copy-ort.mjs",
     "build": "astro check && astro build",
     "preview": "astro preview",
     "test": "vitest run"
@@ -20,6 +22,7 @@
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@huggingface/transformers": "^4.2.0",
     "@iconify-json/lucide": "^1.2.120",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.1.6",

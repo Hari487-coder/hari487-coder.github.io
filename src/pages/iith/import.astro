@@ -1,0 +1,523 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import Base from '../../layouts/Base.astro';
+
+const courses = (await getCollection('courses')).sort((a, b) => {
+  const rank = (s: string) => (s === 'ongoing' ? 0 : 1);
+  return rank(a.data.status) - rank(b.data.status) || a.data.code.localeCompare(b.data.code);
+});
+
+const courseOptions = courses.map((c) => ({ id: c.id, code: c.data.code, name: c.data.name }));
+---
+
+<Base
+  title="Import to notes"
+  description="Turn recordings, slide photos, and PDFs into structured lecture notes."
+>
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">IIT Hyderabad</p>
+      <h1>Import to notes</h1>
+      <p class="subtitle">
+        Drop in a recording, photos of the board, or a slide PDF. Recordings are
+        transcribed on this machine; the rest goes straight to Claude. Out comes one set
+        of notes for the lecture.
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="controls">
+      <label class="field">
+        <span class="field-label">Course</span>
+        <select id="course">
+          {courseOptions.map((c) => (
+            <option value={c.id} data-code={c.code} data-name={c.name}>
+              {c.code} · {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Topic (optional)</span>
+        <input id="topic" type="text" placeholder="e.g. cash flow statements" />
+      </label>
+      <label class="field">
+        <span class="field-label">Lecture date</span>
+        <input id="date" type="date" />
+      </label>
+    </div>
+
+    <div class="drop" id="drop">
+      <Icon name="lucide:upload-cloud" />
+      <p><strong>Drop files here</strong> or <button class="linklike" id="pick">choose files</button></p>
+      <p class="meta">
+        Photos (jpg, png, heic-converted), PDFs, and audio (m4a, mp3, wav, webm).
+        Several photos of one lecture become one note.
+      </p>
+      <input id="file-input" type="file" multiple accept="image/*,application/pdf,audio/*" hidden />
+    </div>
+
+    <ul class="filelist" id="filelist"></ul>
+
+    <p class="actions-row">
+      <button class="btn" id="convert" disabled>
+        <Icon name="lucide:sparkles" /> Convert to notes
+      </button>
+      <button class="btn-secondary" id="clear" hidden>Clear</button>
+      <span class="meta" id="status"></span>
+    </p>
+    <div class="alert-error card-lite" id="error" hidden></div>
+  </div>
+
+  <div class="card" id="result-card" hidden>
+    <div class="card-row">
+      <h2>Notes</h2>
+      <span class="meta" id="result-meta"></span>
+    </div>
+    <div class="prose" id="notes"></div>
+    <p class="actions-row">
+      <button class="btn" id="save"><Icon name="lucide:upload" /> Save to site</button>
+      <button class="btn-secondary" id="download"><Icon name="lucide:download" /> Download .md</button>
+      <button class="btn-secondary" id="copy"><Icon name="lucide:copy" /> Copy</button>
+    </p>
+    <div class="alert-success card-lite" id="save-success" hidden>
+      Saved. The site is rebuilding; the notes will be live in about two minutes at
+      <a id="save-site-link" href="/">this page</a> (<a id="save-repo-link" href="/">commit</a>).
+    </div>
+    <div class="alert-error card-lite" id="save-error" hidden></div>
+  </div>
+
+  <div class="card">
+    <div class="card-row">
+      <h2>How this works</h2>
+    </div>
+    <div class="prose" style="margin-top: 12px;">
+      <p>
+        Photos and PDFs are sent to Claude with your own API key, the same one the
+        <a href="/iith/live/">live recorder</a> uses. Audio is different: Claude cannot
+        read audio, so a Whisper model runs locally in this browser to produce a
+        transcript first. The recording itself never leaves your machine. The first
+        recording you import downloads about 50MB of model weights, which the browser
+        then caches.
+      </p>
+      <p>
+        Long recordings take a while. Transcription runs on your GPU when the browser
+        supports WebGPU and falls back to the CPU otherwise, which is considerably
+        slower. Leave the tab open while it runs.
+      </p>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .field-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+  }
+  .field select,
+  .field input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    font-size: 14.5px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-family: inherit;
+  }
+  .field select:focus,
+  .field input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+  .drop {
+    border: 2px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 30px 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .drop.over {
+    border-color: var(--accent);
+    background: var(--accent-tint);
+  }
+  .drop svg {
+    width: 26px;
+    height: 26px;
+    color: var(--accent-strong);
+  }
+  .drop p {
+    margin: 8px 0 0;
+    font-size: 14px;
+  }
+  .drop .meta {
+    font-size: 12.5px;
+    max-width: 44ch;
+    margin-inline: auto;
+  }
+  .linklike {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: var(--accent-strong);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .filelist {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .filelist:empty {
+    margin: 0;
+  }
+  .filelist li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+  }
+  .filelist li:last-child {
+    border-bottom: none;
+  }
+  .fname {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .fmeta {
+    color: var(--text-muted);
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+  .actions-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 16px 0 0;
+  }
+  .card-lite {
+    margin-top: 14px;
+    padding: 13px 16px;
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    border: 1px solid transparent;
+  }
+  .alert-error.card-lite {
+    background: var(--critical-tint);
+    color: var(--critical);
+    border-color: var(--critical-tint-border);
+  }
+  .alert-success.card-lite {
+    background: var(--good-tint);
+    color: var(--good);
+    border-color: var(--good-tint-border);
+  }
+  .alert-success.card-lite a {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+  #result-card {
+    margin-top: 16px;
+  }
+</style>
+
+<script>
+  import { marked } from 'marked';
+  import DOMPurify from 'dompurify';
+  import { imageBlock, kindOf, pdfBlock, type Kind } from '../../lib/import/files';
+  import { transcribe } from '../../lib/import/transcribe';
+  import { notesFromSources } from '../../lib/live/notesEngine';
+  import { saveToRepo, downloadMd } from '../../lib/live/saver';
+  import type { LiveSession } from '../../lib/live/session';
+
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
+    document.getElementById(id) as T;
+
+  const els = {
+    course: $<HTMLSelectElement>('course'),
+    topic: $<HTMLInputElement>('topic'),
+    date: $<HTMLInputElement>('date'),
+    drop: $('drop'),
+    pick: $<HTMLButtonElement>('pick'),
+    input: $<HTMLInputElement>('file-input'),
+    filelist: $<HTMLUListElement>('filelist'),
+    convert: $<HTMLButtonElement>('convert'),
+    clear: $<HTMLButtonElement>('clear'),
+    status: $('status'),
+    error: $('error'),
+    resultCard: $('result-card'),
+    resultMeta: $('result-meta'),
+    notes: $('notes'),
+    save: $<HTMLButtonElement>('save'),
+    download: $<HTMLButtonElement>('download'),
+    copy: $<HTMLButtonElement>('copy'),
+    saveSuccess: $('save-success'),
+    saveSiteLink: $<HTMLAnchorElement>('save-site-link'),
+    saveRepoLink: $<HTMLAnchorElement>('save-repo-link'),
+    saveError: $('save-error'),
+  };
+
+  els.date.valueAsDate = new Date();
+
+  let files: File[] = [];
+  let notes = '';
+
+  const KIND_LABEL: Record<Kind, string> = {
+    image: 'photo',
+    pdf: 'PDF',
+    audio: 'recording',
+    unsupported: 'unsupported',
+  };
+
+  const mb = (n: number) => `${(n / 1048576).toFixed(1)} MB`;
+
+  function renderFiles() {
+    els.filelist.innerHTML = '';
+    for (const [i, file] of files.entries()) {
+      const kind = kindOf(file);
+      const li = document.createElement('li');
+
+      const name = document.createElement('span');
+      name.className = 'fname';
+      name.textContent = file.name;
+
+      const right = document.createElement('span');
+      right.className = 'fmeta';
+      right.textContent = `${KIND_LABEL[kind]} · ${mb(file.size)}`;
+
+      const remove = document.createElement('button');
+      remove.className = 'linklike';
+      remove.textContent = 'remove';
+      remove.addEventListener('click', () => {
+        files.splice(i, 1);
+        renderFiles();
+      });
+
+      const rightWrap = document.createElement('span');
+      rightWrap.style.display = 'flex';
+      rightWrap.style.gap = '12px';
+      rightWrap.style.alignItems = 'center';
+      rightWrap.append(right, remove);
+
+      li.append(name, rightWrap);
+      els.filelist.append(li);
+    }
+    const usable = files.filter((f) => kindOf(f) !== 'unsupported').length;
+    els.convert.disabled = usable === 0;
+    els.clear.hidden = files.length === 0;
+  }
+
+  function addFiles(list: FileList | File[]) {
+    const incoming = Array.from(list);
+    const rejected = incoming.filter((f) => kindOf(f) === 'unsupported');
+    files = files.concat(incoming.filter((f) => kindOf(f) !== 'unsupported'));
+    if (rejected.length) {
+      els.error.hidden = false;
+      els.error.textContent = `Skipped ${rejected.length} unsupported file(s): ${rejected
+        .map((f) => f.name)
+        .join(', ')}. Photos, PDFs, and audio only.`;
+    }
+    renderFiles();
+  }
+
+  els.pick.addEventListener('click', () => els.input.click());
+  els.input.addEventListener('change', () => {
+    if (els.input.files) addFiles(els.input.files);
+    els.input.value = '';
+  });
+
+  for (const event of ['dragenter', 'dragover']) {
+    els.drop.addEventListener(event, (e) => {
+      e.preventDefault();
+      els.drop.classList.add('over');
+    });
+  }
+  for (const event of ['dragleave', 'drop']) {
+    els.drop.addEventListener(event, (e) => {
+      e.preventDefault();
+      els.drop.classList.remove('over');
+    });
+  }
+  els.drop.addEventListener('drop', (e) => {
+    const dt = (e as DragEvent).dataTransfer;
+    if (dt?.files?.length) addFiles(dt.files);
+  });
+
+  els.clear.addEventListener('click', () => {
+    files = [];
+    notes = '';
+    els.resultCard.hidden = true;
+    els.error.hidden = true;
+    els.status.textContent = '';
+    renderFiles();
+  });
+
+  function currentSession(): LiveSession {
+    const option = els.course.selectedOptions[0];
+    return {
+      courseId: els.course.value,
+      courseCode: option?.dataset.code ?? els.course.value,
+      courseName: option?.dataset.name ?? '',
+      topic: els.topic.value.trim(),
+      startedAt: Date.now(),
+      finals: [],
+      notes,
+      cursor: 0,
+    };
+  }
+
+  function lectureDate(): Date {
+    return els.date.valueAsDate ?? new Date();
+  }
+
+  els.convert.addEventListener('click', async () => {
+    const key = localStorage.getItem('live.anthropicKey');
+    if (!key) {
+      els.error.hidden = false;
+      els.error.textContent =
+        'Add your Anthropic API key in the live recorder settings first, then come back.';
+      return;
+    }
+
+    els.convert.disabled = true;
+    els.error.hidden = true;
+    els.resultCard.hidden = true;
+
+    try {
+      const blocks: unknown[] = [];
+      const counts = { image: 0, pdf: 0, audio: 0 };
+
+      for (const file of files) {
+        const kind = kindOf(file);
+        if (kind === 'image') {
+          els.status.textContent = `preparing ${file.name}`;
+          blocks.push(await imageBlock(file));
+          counts.image++;
+        } else if (kind === 'pdf') {
+          els.status.textContent = `preparing ${file.name}`;
+          blocks.push(await pdfBlock(file));
+          counts.pdf++;
+        } else if (kind === 'audio') {
+          const text = await transcribe(file, (p) => {
+            els.status.textContent = p.detail ?? p.status;
+          });
+          if (text) {
+            blocks.push({
+              type: 'text',
+              text: `Transcript of the recording "${file.name}":\n\n${text}`,
+            });
+            counts.audio++;
+          }
+        }
+      }
+
+      if (!blocks.length) throw new Error('nothing usable in those files');
+
+      const parts = [
+        counts.image ? `${counts.image} photo(s)` : '',
+        counts.pdf ? `${counts.pdf} PDF(s)` : '',
+        counts.audio ? `${counts.audio} recording transcript(s)` : '',
+      ].filter(Boolean);
+      const sourceSummary = parts.join(' and ');
+
+      els.status.textContent = 'writing notes with Claude';
+      const session = currentSession();
+      notes = await notesFromSources({
+        apiKey: key,
+        courseCode: session.courseCode,
+        courseName: session.courseName,
+        topic: session.topic,
+        blocks,
+        sourceSummary,
+      });
+
+      els.notes.innerHTML = DOMPurify.sanitize(await marked.parse(notes));
+      els.resultMeta.textContent = `from ${sourceSummary}`;
+      els.resultCard.hidden = false;
+      els.status.textContent = 'done';
+      els.save.disabled = !localStorage.getItem('live.githubToken');
+    } catch (err) {
+      els.error.hidden = false;
+      els.error.textContent = `Conversion failed: ${err instanceof Error ? err.message : err}`;
+      els.status.textContent = '';
+    } finally {
+      els.convert.disabled = files.length === 0;
+    }
+  });
+
+  els.save.addEventListener('click', async () => {
+    const token = localStorage.getItem('live.githubToken');
+    if (!token || !notes) return;
+    els.save.disabled = true;
+    els.saveError.hidden = true;
+    els.status.textContent = 'saving';
+    try {
+      const result = await saveToRepo({
+        token,
+        session: { ...currentSession(), notes },
+        date: lectureDate(),
+      });
+      els.saveSiteLink.href = result.siteUrl;
+      els.saveRepoLink.href = result.url;
+      els.saveSuccess.hidden = false;
+      els.status.textContent = '';
+    } catch (err) {
+      els.save.disabled = false;
+      els.saveError.hidden = false;
+      els.saveError.textContent = `Save failed: ${err instanceof Error ? err.message : err}. Nothing is lost, use Download.`;
+      els.status.textContent = '';
+    }
+  });
+
+  els.download.addEventListener('click', () => {
+    if (notes) downloadMd({ ...currentSession(), notes }, lectureDate());
+  });
+
+  els.copy.addEventListener('click', async () => {
+    if (!notes) return;
+    await navigator.clipboard.writeText(notes);
+    els.status.textContent = 'copied';
+  });
+
+  // Debug hook: exercise rendering and save without real files or API calls.
+  (window as any).__import = {
+    setNotes(md: string) {
+      notes = md;
+      els.notes.innerHTML = DOMPurify.sanitize(marked.parse(md) as string);
+      els.resultCard.hidden = false;
+    },
+    addFiles,
+    transcribe,
+    imageBlock,
+    pdfBlock,
+    kindOf,
+    state: () => ({ files: files.map((f) => [f.name, kindOf(f)]), hasNotes: !!notes }),
+  };
+</script>

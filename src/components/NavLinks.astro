@@ -12,8 +12,10 @@ const workspace = [
 
 const iith = [
   { href: '/iith/', label: 'Courses', icon: 'lucide:graduation-cap', match: (p: string) => p === '/iith/' || p.startsWith('/iith/courses') || p.startsWith('/iith/notes') },
+  { href: '/iith/timetable/', label: 'Timetable', icon: 'lucide:calendar-days', match: (p: string) => p.startsWith('/iith/timetable') },
   { href: '/iith/assignments/', label: 'Assignments', icon: 'lucide:list-checks', match: (p: string) => p.startsWith('/iith/assignments') },
   { href: '/iith/live/', label: 'Live notes', icon: 'lucide:mic', match: (p: string) => p.startsWith('/iith/live') },
+  { href: '/iith/import/', label: 'Import to notes', icon: 'lucide:file-up', match: (p: string) => p.startsWith('/iith/import') },
   { href: '/iith/inbox/', label: 'Inbox', icon: 'lucide:inbox', match: (p: string) => p.startsWith('/iith/inbox') },
 ];
 ---

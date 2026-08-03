@@ -1,0 +1,299 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import Base from '../../layouts/Base.astro';
+import { DAYS, ENDS, PERIODS, SLOTS, TERM, meetingsFor } from '../../lib/slots';
+import { credits as fmtCredits } from '../../lib/format';
+
+const courses = (await getCollection('courses'))
+  .filter((c) => c.data.status === 'ongoing')
+  .sort((a, b) => a.data.code.localeCompare(b.data.code));
+
+/** One entry per lecture in the week, keyed by day and period. */
+const cells: Record<string, { code: string; name: string; room?: string; id: string }[]> = {};
+for (const c of courses) {
+  for (const m of meetingsFor(c.data.slot)) {
+    const key = `${m.day}-${m.start}`;
+    (cells[key] ??= []).push({
+      code: c.data.code,
+      name: c.data.name,
+      room: c.data.room,
+      id: c.id,
+    });
+  }
+}
+
+const untimetabled = courses.filter((c) => !c.data.slot || !SLOTS[c.data.slot]);
+
+const weeklyHours = Object.values(cells)
+  .flat()
+  .reduce((sum, _c) => sum + 1, 0);
+
+/** Serialized for the calendar export. */
+const exportRows = courses
+  .filter((c) => c.data.slot && SLOTS[c.data.slot])
+  .flatMap((c) =>
+    meetingsFor(c.data.slot).map((m) => ({
+      code: c.data.code,
+      title: c.data.name,
+      room: c.data.room ?? '',
+      instructor: c.data.instructor ?? '',
+      slot: c.data.slot ?? '',
+      day: m.day,
+      start: m.start,
+      end: m.end,
+    })),
+  );
+---
+
+<Base
+  title="Timetable"
+  description="The weekly IITH timetable: every registered course in its slot, with rooms."
+>
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">Jul to Nov 2026 · {weeklyHours} sessions a week</p>
+      <h1>Timetable</h1>
+      <p class="subtitle">
+        Built from the IITH slot grid, so each course sits where its slot letter puts it.
+      </p>
+    </div>
+    <button class="btn-secondary" id="export-ics">
+      <Icon name="lucide:calendar-plus" /> Add to calendar
+    </button>
+  </div>
+
+  <div class="card tt-card">
+    <div class="tt-scroll">
+      <table class="tt">
+        <thead>
+          <tr>
+            <th class="tt-time"></th>
+            {DAYS.map((d) => <th>{d}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {PERIODS.map((p) => (
+            <tr>
+              <th class="tt-time mono">
+                {p}
+                <span>{ENDS[p]}</span>
+              </th>
+              {DAYS.map((_d, di) => {
+                const here = cells[`${di}-${p}`] ?? [];
+                return (
+                  <td class:list={[{ filled: here.length > 0, clash: here.length > 1 }]}>
+                    {here.map((c) => (
+                      <a class="tt-item" href={`/iith/courses/${c.id}/`}>
+                        <span class="tt-code mono">{c.code}</span>
+                        <span class="tt-name">{c.name}</span>
+                        {c.room && <span class="tt-room mono">{c.room}</span>}
+                      </a>
+                    ))}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {untimetabled.length > 0 && (
+    <section class="section">
+      <div class="section-head">
+        <h2>Not on the grid</h2>
+        <span class="meta">{untimetabled.length}</span>
+      </div>
+      <div class="card">
+        <ul class="row-list" style="margin-top: 0;">
+          {untimetabled.map((c) => (
+            <li>
+              <div class="row-main">
+                <a class="row-title" href={`/iith/courses/${c.id}/`}>{c.data.name}</a>
+                <div class="row-sub">
+                  {c.data.code} · {fmtCredits(c.data.credits)} · no published timings
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )}
+</Base>
+
+<style>
+  .tt-card {
+    padding: 14px;
+  }
+  .tt-scroll {
+    overflow-x: auto;
+  }
+  .tt {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 6px;
+    min-width: 720px;
+  }
+  .tt thead th {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    padding-bottom: 2px;
+    text-align: left;
+  }
+  .tt-time {
+    width: 68px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    vertical-align: top;
+    padding-top: 10px;
+    white-space: nowrap;
+  }
+  .tt-time span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+  .tt td {
+    background: var(--surface-sunken);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    height: 62px;
+    vertical-align: top;
+    padding: 0;
+  }
+  .tt td.filled {
+    background: var(--accent-tint);
+    border-color: var(--accent-tint-border);
+  }
+  .tt td.clash {
+    background: var(--critical-tint);
+    border-color: var(--critical-tint-border);
+  }
+  .tt-item {
+    display: block;
+    padding: 9px 11px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .tt-code {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-strong);
+  }
+  .tt-name {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 1px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .tt-room {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+  .tt-item:hover .tt-code {
+    text-decoration: underline;
+  }
+</style>
+
+<script define:vars={{ exportRows, TERM, DAYS }}>
+  window.__ttExport = { rows: exportRows, term: TERM, days: DAYS };
+</script>
+
+<script>
+  const data = (window as any).__ttExport as {
+    rows: {
+      code: string;
+      title: string;
+      room: string;
+      instructor: string;
+      slot: string;
+      day: number;
+      start: string;
+      end: string;
+    }[];
+    term: { firstDate: string[]; end: string };
+  };
+
+  const button = document.getElementById('export-ics');
+
+  const hhmmss = (t: string) => `${t.replace(':', '')}00`;
+  const escape = (s: string) => s.replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n');
+
+  /** RFC 5545 caps lines at 75 octets; continuation lines start with a space. */
+  function fold(line: string): string {
+    if (line.length <= 73) return line;
+    const parts = [line.slice(0, 73)];
+    let rest = line.slice(73);
+    while (rest.length > 72) {
+      parts.push(` ${rest.slice(0, 72)}`);
+      rest = rest.slice(72);
+    }
+    if (rest) parts.push(` ${rest}`);
+    return parts.join('\r\n');
+  }
+
+  button?.addEventListener('click', () => {
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//hari life hub//timetable//EN',
+      'CALSCALE:GREGORIAN',
+      'BEGIN:VTIMEZONE',
+      'TZID:Asia/Kolkata',
+      'BEGIN:STANDARD',
+      'DTSTART:19700101T000000',
+      'TZOFFSETFROM:+0530',
+      'TZOFFSETTO:+0530',
+      'TZNAME:IST',
+      'END:STANDARD',
+      'END:VTIMEZONE',
+    ];
+
+    for (const r of data.rows) {
+      const date = data.term.firstDate[r.day];
+      lines.push(
+        'BEGIN:VEVENT',
+        `UID:${r.code}-${r.day}-${r.start.replace(':', '')}-lifehub@local`,
+        `DTSTAMP:${stamp}`,
+        `DTSTART;TZID=Asia/Kolkata:${date}T${hhmmss(r.start)}`,
+        `DTEND;TZID=Asia/Kolkata:${date}T${hhmmss(r.end)}`,
+        `RRULE:FREQ=WEEKLY;UNTIL=${data.term.end}Z`,
+        fold(`SUMMARY:${escape(`${r.code} ${r.title}`)}`),
+      );
+      if (r.room) lines.push(fold(`LOCATION:${escape(r.room)}`));
+      lines.push(
+        fold(
+          `DESCRIPTION:${escape(
+            `Slot ${r.slot}${r.instructor ? ` · ${r.instructor}` : ''}`,
+          )}`,
+        ),
+        'END:VEVENT',
+      );
+    }
+
+    lines.push('END:VCALENDAR');
+
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'iith-timetable.ics';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+</script>

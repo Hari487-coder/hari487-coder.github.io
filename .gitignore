@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# Copied from node_modules at build time by scripts/copy-ort.mjs
+public/ort/
 .astro/
 npm-debug.log*
 .DS_Store
