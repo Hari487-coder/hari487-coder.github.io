@@ -51,16 +51,19 @@ const sections = CATEGORY_LIST.map((meta) => ({
     </div>
   )}
 
-  {sections.map(({ meta, items }) => (
+  {/* With nothing saved at all, the composed empty state above says it once;
+      repeating "nothing here yet" per section adds three more things to read. */}
+  {notes.length > 0 && sections.map(({ meta, items }) => (
     <section class="section">
       <div class="section-head">
         <h2>{meta.label}</h2>
         <span class="meta">{items.length}</span>
       </div>
-      <div class="card">
-        {items.length === 0 ? (
-          <p class="meta" style="margin: 0;">{meta.blurb} Nothing here yet.</p>
-        ) : (
+      {/* An empty section gets a line of text, not an empty box to look at. */}
+      {items.length === 0 ? (
+        <p class="section-empty">{meta.blurb} Nothing here yet.</p>
+      ) : (
+        <div class="card flush">
           <ul class="row-list" style="margin-top: 0;">
             {items.map((note) => {
               const course = note.data.course ? courseById.get(note.data.course.id) : undefined;
@@ -77,8 +80,8 @@ const sections = CATEGORY_LIST.map((meta) => ({
               );
             })}
           </ul>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   ))}
 </Base>

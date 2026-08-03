@@ -60,7 +60,7 @@ const liveCount = projects.filter((p) => p.data.status === 'live').length;
       <h2>Due soon</h2>
       <a class="section-link" href="/iith/assignments/">All assignments <Icon name="lucide:arrow-right" /></a>
     </div>
-    <div class="card">
+    <div class:list={['card', { flush: dueSoon.length > 0 }]}>
       {dueSoon.length === 0 ? (
         <div class="empty-state">
           <span class="empty-icon"><Icon name="lucide:coffee" /></span>
@@ -92,7 +92,7 @@ const liveCount = projects.filter((p) => p.data.status === 'live').length;
       <h2>Currently taking</h2>
       <a class="section-link" href="/iith/">All courses <Icon name="lucide:arrow-right" /></a>
     </div>
-    <div class="card">
+    <div class="card flush">
       <ul class="row-list" style="margin-top: 0;">
         {ongoing.map((c) => (
           <li>

@@ -490,15 +490,32 @@ p.subtitle {
 }
 
 /* ---------- Cards ---------- */
+/**
+ * Cards carry a border and a white fill against the lavender page, which is
+ * already enough separation. The resting shadow was doing the same job twice and
+ * made every stacked section read as another floating slab; elevation is now
+ * spent only where it means something (hover on something you can click).
+ */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 26px;
-  box-shadow: var(--shadow-sm);
+  padding: 22px;
 }
 .card + .card {
-  margin-top: 16px;
+  margin-top: 14px;
+}
+/**
+ * A card whose only job is to hold a row list: the rows set the rhythm, so the
+ * card keeps just enough padding to balance the first row's own inset. The
+ * last-child rule restores the bottom padding that .row-list drops, otherwise
+ * the list sits flush against the bottom edge but not the top.
+ */
+.card.flush {
+  padding: 5px 20px;
+}
+.card.flush .row-list > li:last-child {
+  padding-bottom: 13px;
 }
 .card-interactive {
   transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease;
@@ -517,10 +534,10 @@ p.subtitle {
 }
 .card h2 {
   font-family: var(--font-display);
-  font-size: 19px;
+  font-size: 16.5px;
   font-weight: 600;
   margin: 0;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
 }
 .card-sub {
   color: var(--text-muted);
@@ -624,25 +641,40 @@ p.subtitle {
 }
 
 /* ---------- Stat tiles ---------- */
+/**
+ * One rail, not four floating tiles. The 1px gap over a border-coloured
+ * background draws the dividers, which is the one technique that stays correct
+ * when the grid wraps to two rows or collapses to a single column.
+ */
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 22px;
 }
 .stat-tile {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 18px;
+  background: var(--surface);
   text-decoration: none;
   color: inherit;
+  transition: background 0.2s ease;
+}
+a.stat-tile:hover {
+  background: var(--surface-sunken);
 }
 .stat-tile-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-md);
   background: var(--accent-tint);
   border: 1px solid var(--accent-tint-border);
@@ -650,8 +682,8 @@ p.subtitle {
   flex-shrink: 0;
 }
 .stat-tile-icon svg {
-  width: 19px;
-  height: 19px;
+  width: 16px;
+  height: 16px;
 }
 .stat-tile-icon.tone-good {
   background: var(--good-tint);
@@ -670,12 +702,16 @@ p.subtitle {
 }
 .stat-tile-value {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 23px;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text-primary);
-  margin: 2px 0 6px;
+  margin: 1px 0 0;
+  line-height: 1.15;
   font-variant-numeric: tabular-nums;
+}
+.stat-tile .meta {
+  font-size: 12px;
 }
 
 /* ---------- List rows inside cards (assignments, courses) ---------- */
@@ -926,27 +962,44 @@ a.row-title:hover {
 
 /* ---------- Section blocks ---------- */
 .section {
-  margin-top: 34px;
+  margin-top: 28px;
 }
 .section-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
 }
+/**
+ * Section headings are wayfinding, not content. Setting them as quiet uppercase
+ * labels instead of a second display face leaves exactly one loud thing per page
+ * (the h1) and lets the row titles underneath carry the weight they deserve.
+ */
 .section-head h2 {
-  font-family: var(--font-display);
-  font-size: 19px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
   margin: 0;
+}
+/**
+ * The empty state for one section among many. A section with nothing in it does
+ * not earn a box: an empty card is a piece of furniture you still have to read
+ * past. Pages where EVERYTHING is empty still get one composed .empty-state.
+ */
+.section-empty {
+  color: var(--text-muted);
+  font-size: 13.5px;
+  margin: 0;
+  padding: 2px 0 4px;
 }
 .section-link {
   color: var(--accent-strong);
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: 12.5px;
   text-decoration: none;
   display: inline-flex;
   align-items: center;

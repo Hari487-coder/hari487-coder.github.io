@@ -14,7 +14,8 @@ const iconCls = tone === 'accent' ? 'stat-tile-icon' : `stat-tile-icon tone-${to
 const Tag = href ? 'a' : 'div';
 ---
 
-<Tag class:list={['card', 'stat-tile', { 'card-interactive': !!href }]} href={href}>
+{/* No .card here: .stat-grid is the single surface, tiles are cells within it. */}
+<Tag class="stat-tile" href={href}>
   <span class={iconCls}><Icon name={icon} /></span>
   <span>
     <span class="meta">{label}</span>

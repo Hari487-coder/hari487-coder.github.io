@@ -61,7 +61,7 @@ const badge = course.data.status === 'ongoing'
         <h2>Lecture notes</h2>
         <span class="meta">{notes.length}</span>
       </div>
-      <div class="card">
+      <div class="card flush">
         <ul class="row-list" style="margin-top: 0;">
           {notes.map((n) => (
             <li>
@@ -82,10 +82,10 @@ const badge = course.data.status === 'ongoing'
     <div class="section-head">
       <h2>Assignments</h2>
     </div>
-    <div class="card">
-      {assignments.length === 0 ? (
-        <p class="meta" style="margin: 0;">Nothing logged for this course yet.</p>
-      ) : (
+    {assignments.length === 0 ? (
+      <p class="section-empty">Nothing logged for this course yet.</p>
+    ) : (
+      <div class="card flush">
         <ul class="row-list" style="margin-top: 0;">
           {assignments.map((a) => {
             const isDone = a.data.status === 'done';
@@ -102,7 +102,7 @@ const badge = course.data.status === 'ongoing'
             );
           })}
         </ul>
-      )}
-    </div>
+      </div>
+    )}
   </section>
 </Base>

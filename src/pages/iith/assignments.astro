@@ -46,6 +46,10 @@ const groups = [
   { title: 'To do', items: todo, empty: 'The queue is empty.' },
   { title: 'Done', items: done, empty: 'Nothing cleared yet.' },
 ];
+
+/** One composed empty state when there is genuinely nothing, quiet one-liners
+    otherwise: three stacked illustrated empties is noise, not welcome. */
+const allEmpty = groups.every((g) => g.items.length === 0);
 ---
 
 <Base title="Assignments" description="Every assignment across all IITH courses, by status.">
@@ -59,24 +63,30 @@ const groups = [
 
   <SubTabs tabs={WORK_TABS} active="assignments" />
 
-  {groups.map(({ title, items, empty }) => (
+  {allEmpty && (
+    <div class="card" style="margin-top: 20px;">
+      <div class="empty-state">
+        <span class="empty-icon"><Icon name="lucide:inbox" /></span>
+        <p>Nothing logged yet. Track work from <a href="/iith/inbox/">Classroom</a>, or add an assignment file to the repo.</p>
+      </div>
+    </div>
+  )}
+
+  {!allEmpty && groups.map(({ title, items, empty }) => (
     <section class="section">
       <div class="section-head">
         <h2>{title}</h2>
         <span class="meta">{items.length}</span>
       </div>
-      <div class="card">
-        {items.length === 0 ? (
-          <div class="empty-state" style="padding: 28px 24px;">
-            <span class="empty-icon"><Icon name="lucide:inbox" /></span>
-            <p>{empty}</p>
-          </div>
-        ) : (
+      {items.length === 0 ? (
+        <p class="section-empty">{empty}</p>
+      ) : (
+        <div class="card flush">
           <ul class="row-list" style="margin-top: 0;">
             {items.map((a) => <AssignmentRow {...rowProps(a)} />)}
           </ul>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   ))}
 </Base>
