@@ -4,7 +4,8 @@ import { glob } from 'astro/loaders';
 const courses = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/courses' }),
   schema: z.object({
-    code: z.string().regex(/^[A-Z]{2}\d{4}$/),
+    // Most IITH codes are 2 letters + 4 digits; NSS courses like CI101 use 3.
+    code: z.string().regex(/^[A-Z]{2}\d{3,4}$/),
     name: z.string(),
     semester: z.number().int().min(1).max(4),
     credits: z.number().positive(),
