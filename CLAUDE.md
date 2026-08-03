@@ -232,7 +232,27 @@ fetched live in the browser. One-click "Track on site" turns a Classroom item in
   (also used by the live recorder's saver), page `src/pages/iith/inbox.astro`.
 - Debug hook: `window.__inbox.render(mockPending, mockMail)` + `.authUrl()`.
 
+## Notes and their four sections
+
+Every note carries a `category`: `projects`, `workspace`, `iith`, or `content` (defined
+once in `src/lib/categories.ts`). `/notes/` lists all four sections; notes live at
+`/notes/<slug>/` regardless of category. Only `iith` notes carry a `course` reference,
+so anything reading `note.data.course` must treat it as optional.
+
+**Notes only exist once saved.** The recorder and import pages hold work in browser
+storage until "Save to site", which needs the GitHub token. The recorder now warns about
+a missing token BEFORE recording rather than after, because the silent version cost a
+set of real lecture notes. An unsaved session survives in `live.session` and can be
+recovered from the restore banner.
+
 ## Gotchas
+
+**Deleting a content file leaves a stale entry in `node_modules/.astro/data-store.json`,
+not `.astro/`.** Symptom: a note you deleted still builds and still appears on the site.
+Clearing `.astro` and `dist` alone does nothing. Fix:
+`rm -rf node_modules/.astro .astro dist && npm run build`. CI is unaffected because
+`npm ci` wipes node_modules.
+
 
 - Deleting a content file can leave a stale entry in Astro's content store
   (`node_modules/.astro/data-store.json`), so the deleted page keeps building locally.

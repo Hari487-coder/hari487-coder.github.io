@@ -14,7 +14,7 @@ const notes = (await getCollection('notes')).sort(
 const noteOptions = notes.map((n) => ({
   slug: n.id,
   label: n.data.title,
-  course: courseById.get(n.data.course.id)?.data.code ?? '',
+  course: (n.data.course ? courseById.get(n.data.course.id)?.data.code : '') ?? '',
   date: fmt(n.data.date),
   body: n.body ?? '',
 }));

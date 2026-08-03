@@ -4,6 +4,7 @@
 // bodies plus the structural relations already in frontmatter.
 
 import { getCollection } from 'astro:content';
+import { CATEGORY_META, type Category } from './categories';
 
 export type NodeKind = 'course' | 'note' | 'assignment' | 'project';
 
@@ -97,19 +98,24 @@ export async function linkIndex(): Promise<Index> {
   }
 
   for (const n of notes) {
+    const course = n.data.course ? courseById.get(n.data.course.id) : undefined;
     const node: GraphNode = {
       id: nodeId('note', n.id),
       kind: 'note',
       label: n.data.title,
-      sub: courseById.get(n.data.course.id)?.data.code ?? 'Notes',
-      href: `/iith/notes/${n.id}/`,
+      sub: course?.data.code ?? CATEGORY_META[n.data.category as Category].label,
+      href: `/notes/${n.id}/`,
     };
     register(node, [n.id, n.data.title], n.body ?? '');
-    edges.push({
-      source: node.id,
-      target: nodeId('course', n.data.course.id),
-      kind: 'structural',
-    });
+    // Only coursework notes hang off a course; the other categories stand alone
+    // until a wikilink connects them.
+    if (n.data.course) {
+      edges.push({
+        source: node.id,
+        target: nodeId('course', n.data.course.id),
+        kind: 'structural',
+      });
+    }
   }
 
   for (const a of assignments) {

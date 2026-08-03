@@ -1,0 +1,78 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import Base from '../../layouts/Base.astro';
+import { fmt } from '../../lib/dates';
+import { CATEGORY_LIST } from '../../lib/categories';
+
+const courses = await getCollection('courses');
+const courseById = new Map(courses.map((c) => [c.id, c]));
+
+const notes = (await getCollection('notes')).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+
+const sections = CATEGORY_LIST.map((meta) => ({
+  meta,
+  items: notes.filter((n) => n.data.category === meta.id),
+}));
+---
+
+<Base title="Notes" description="Every note captured: projects, work, coursework, and content.">
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">{notes.length} saved</p>
+      <h1>Notes</h1>
+      <p class="subtitle">
+        Everything you have captured, split by where it belongs. Record with the
+        <a href="/iith/live/">live recorder</a> or bring in recordings, photos, and PDFs
+        through <a href="/iith/import/">import</a>.
+      </p>
+    </div>
+  </div>
+
+  {notes.length === 0 && (
+    <div class="card">
+      <div class="empty-state">
+        <span class="empty-icon"><Icon name="lucide:notebook-pen" /></span>
+        <p>
+          No notes saved yet. Notes only reach this page when you press <strong>Save to
+          site</strong>, which needs a GitHub token in the recorder settings. Anything
+          still sitting in a recorder tab can be recovered from its restore banner.
+        </p>
+        <a class="btn" href="/iith/live/">Open the recorder</a>
+      </div>
+    </div>
+  )}
+
+  {sections.map(({ meta, items }) => (
+    <section class="section">
+      <div class="section-head">
+        <h2>{meta.label}</h2>
+        <span class="meta">{items.length}</span>
+      </div>
+      <div class="card">
+        {items.length === 0 ? (
+          <p class="meta" style="margin: 0;">{meta.blurb} Nothing here yet.</p>
+        ) : (
+          <ul class="row-list" style="margin-top: 0;">
+            {items.map((note) => {
+              const course = note.data.course ? courseById.get(note.data.course.id) : undefined;
+              return (
+                <li>
+                  <div class="row-main">
+                    <a class="row-title" href={`/notes/${note.id}/`}>{note.data.title}</a>
+                    {course && <div class="row-sub">{course.data.code} · {course.data.name}</div>}
+                  </div>
+                  <div class="row-side">
+                    <span class="row-due">{fmt(note.data.date)}</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </section>
+  ))}
+</Base>

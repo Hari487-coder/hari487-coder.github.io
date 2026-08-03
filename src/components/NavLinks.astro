@@ -6,6 +6,7 @@ const path = Astro.url.pathname;
 const workspace = [
   { href: '/', label: 'Home', icon: 'lucide:layout-dashboard', match: (p: string) => p === '/' },
   { href: '/projects/', label: 'Projects', icon: 'lucide:wrench', match: (p: string) => p.startsWith('/projects') },
+  { href: '/notes/', label: 'Notes', icon: 'lucide:notebook-pen', match: (p: string) => p.startsWith('/notes') },
   { href: '/ideas/', label: 'Ideas', icon: 'lucide:lightbulb', match: (p: string) => p.startsWith('/ideas') },
   { href: '/studio/', label: 'Studio', icon: 'lucide:clapperboard', match: (p: string) => p.startsWith('/studio') },
   { href: '/graph/', label: 'Graph', icon: 'lucide:share-2', match: (p: string) => p.startsWith('/graph') },
@@ -13,7 +14,7 @@ const workspace = [
 ];
 
 const iith = [
-  { href: '/iith/', label: 'Courses', icon: 'lucide:graduation-cap', match: (p: string) => p === '/iith/' || p.startsWith('/iith/courses') || p.startsWith('/iith/notes') },
+  { href: '/iith/', label: 'Courses', icon: 'lucide:graduation-cap', match: (p: string) => p === '/iith/' || p.startsWith('/iith/courses') },
   { href: '/iith/timetable/', label: 'Timetable', icon: 'lucide:calendar-days', match: (p: string) => p.startsWith('/iith/timetable') },
   { href: '/iith/assignments/', label: 'Assignments', icon: 'lucide:list-checks', match: (p: string) => p.startsWith('/iith/assignments') },
   { href: '/iith/live/', label: 'Live notes', icon: 'lucide:mic', match: (p: string) => p.startsWith('/iith/live') },

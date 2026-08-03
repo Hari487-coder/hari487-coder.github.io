@@ -62,7 +62,10 @@ const notes = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/notes' }),
   schema: z.object({
     title: z.string(),
-    course: reference('courses'),
+    /** Which part of the hub this note belongs to. */
+    category: z.enum(['projects', 'workspace', 'iith', 'content']).default('iith'),
+    /** Only meaningful for iith notes; other categories have no course. */
+    course: reference('courses').optional(),
     date: z.coerce.date(),
   }),
 });

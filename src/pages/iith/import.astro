@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Base from '../../layouts/Base.astro';
+import { CATEGORY_LIST } from '../../lib/categories';
 
 const courses = (await getCollection('courses')).sort((a, b) => {
   const rank = (s: string) => (s === 'ongoing' ? 0 : 1);
@@ -30,6 +31,14 @@ const courseOptions = courses.map((c) => ({ id: c.id, code: c.data.code, name: c
   <div class="card">
     <div class="controls">
       <label class="field">
+        <span class="field-label">Section</span>
+        <select id="category">
+          {CATEGORY_LIST.map((c) => (
+            <option value={c.id} selected={c.id === 'iith'}>{c.label}</option>
+          ))}
+        </select>
+      </label>
+      <label class="field" id="course-field">
         <span class="field-label">Course</span>
         <select id="course">
           {courseOptions.map((c) => (
@@ -261,6 +270,8 @@ const courseOptions = courses.map((c) => ({ id: c.id, code: c.data.code, name: c
     document.getElementById(id) as T;
 
   const els = {
+    category: $<HTMLSelectElement>('category'),
+    courseField: $('course-field'),
     course: $<HTMLSelectElement>('course'),
     topic: $<HTMLInputElement>('topic'),
     date: $<HTMLInputElement>('date'),
@@ -379,12 +390,19 @@ const courseOptions = courses.map((c) => ({ id: c.id, code: c.data.code, name: c
     renderFiles();
   });
 
+  const isCourseCategory = () => els.category.value === 'iith';
+  els.category.addEventListener('change', () => {
+    els.courseField.hidden = !isCourseCategory();
+  });
+
   function currentSession(): LiveSession {
     const option = els.course.selectedOptions[0];
+    const courseCategory = isCourseCategory();
     return {
-      courseId: els.course.value,
-      courseCode: option?.dataset.code ?? els.course.value,
-      courseName: option?.dataset.name ?? '',
+      category: els.category.value,
+      courseId: courseCategory ? els.course.value : '',
+      courseCode: courseCategory ? (option?.dataset.code ?? els.course.value) : '',
+      courseName: courseCategory ? (option?.dataset.name ?? '') : '',
       topic: els.topic.value.trim(),
       startedAt: Date.now(),
       finals: [],

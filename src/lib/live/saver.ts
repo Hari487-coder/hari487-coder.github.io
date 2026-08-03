@@ -25,20 +25,39 @@ export function buildMarkdown(
   session: LiveSession,
   date: Date,
 ): { slugBase: string; content: string; title: string } {
-  const title = `${session.courseCode} lecture, ${displayDate(date)}${session.topic ? `: ${session.topic}` : ''}`;
+  const category = session.category || 'iith';
+  const isCourse = category === 'iith' && Boolean(session.courseId);
+
+  const subject = isCourse ? session.courseCode : session.topic || CATEGORY_TITLE[category];
+  const title = isCourse
+    ? `${session.courseCode} lecture, ${displayDate(date)}${session.topic ? `: ${session.topic}` : ''}`
+    : `${subject}, ${displayDate(date)}`;
+
   const body = session.notes.trim() || ['## Transcript', '', transcriptText(session).trim()].join('\n');
-  const content = [
+
+  const frontmatter = [
     '---',
     `title: ${JSON.stringify(title)}`,
-    `course: ${session.courseId}`,
+    `category: ${category}`,
+    ...(isCourse ? [`course: ${session.courseId}`] : []),
     `date: ${isoDate(date)}`,
     '---',
-    '',
-    body,
-    '',
-  ].join('\n');
-  return { slugBase: `${session.courseId}-${isoDate(date)}`, content, title };
+  ];
+
+  const slugPrefix = isCourse ? session.courseId : category;
+  return {
+    slugBase: `${slugPrefix}-${isoDate(date)}`,
+    content: [...frontmatter, '', body, ''].join('\n'),
+    title,
+  };
 }
+
+const CATEGORY_TITLE: Record<string, string> = {
+  projects: 'Project notes',
+  workspace: 'Work notes',
+  iith: 'Lecture notes',
+  content: 'Content notes',
+};
 
 export async function saveToRepo(args: {
   token: string;
@@ -59,7 +78,7 @@ export async function saveToRepo(args: {
   return {
     path: result.path,
     url: result.url,
-    siteUrl: `https://hari487-coder.github.io/iith/notes/${result.slug}/`,
+    siteUrl: `https://hari487-coder.github.io/notes/${result.slug}/`,
   };
 }
 

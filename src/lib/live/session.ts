@@ -2,6 +2,9 @@
 // accidental navigation can never lose a lecture. Cleared on save or discard.
 
 export interface LiveSession {
+  /** Which section of the hub this note belongs to. */
+  category: string;
+  /** Empty for non-coursework categories. */
   courseId: string;
   courseCode: string;
   courseName: string;
@@ -16,6 +19,7 @@ export interface LiveSession {
 const KEY = 'live.session';
 
 export function createSession(args: {
+  category: string;
   courseId: string;
   courseCode: string;
   courseName: string;

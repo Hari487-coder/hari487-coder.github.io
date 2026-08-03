@@ -1,0 +1,45 @@
+---
+import { getCollection, getEntry, render } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import Base from '../../layouts/Base.astro';
+import Backlinks from '../../components/Backlinks.astro';
+import { fmt } from '../../lib/dates';
+import { CATEGORY_META, type Category } from '../../lib/categories';
+
+export async function getStaticPaths() {
+  const notes = await getCollection('notes');
+  return notes.map((note) => ({ params: { slug: note.id }, props: { note } }));
+}
+
+const { note } = Astro.props;
+const { Content } = await render(note);
+const course = note.data.course ? await getEntry('courses', note.data.course.id) : undefined;
+const meta = CATEGORY_META[note.data.category as Category];
+---
+
+<Base title={note.data.title} description={`${meta.label}: ${note.data.title}`}>
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">
+        {course ? `${course.data.code} · ` : `${meta.label} · `}{fmt(note.data.date)}
+      </p>
+      <h1>{note.data.title}</h1>
+      {course && <p class="subtitle">{course.data.name}</p>}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="prose">
+      <Content />
+    </div>
+  </div>
+
+  <Backlinks kind="note" id={note.id} />
+
+  <p style="display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0 0;">
+    <a class="btn-secondary" href="/notes/"><Icon name="lucide:arrow-left" /> All notes</a>
+    {course && (
+      <a class="btn-secondary" href={`/iith/courses/${course.id}/`}>{course.data.code}</a>
+    )}
+  </p>
+</Base>

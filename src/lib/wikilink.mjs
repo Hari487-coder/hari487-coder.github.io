@@ -13,7 +13,7 @@ const CONTENT_DIR = path.join(process.cwd(), 'src', 'content');
 
 const COLLECTIONS = [
   { dir: 'courses', href: (id) => `/iith/courses/${id}/`, kind: 'course' },
-  { dir: 'notes', href: (id) => `/iith/notes/${id}/`, kind: 'note' },
+  { dir: 'notes', href: (id) => `/notes/${id}/`, kind: 'note' },
   { dir: 'projects', href: (id) => `/projects/${id}/`, kind: 'project' },
   { dir: 'assignments', href: () => '/iith/assignments/', kind: 'assignment' },
 ];

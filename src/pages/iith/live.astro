@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import Base from '../../layouts/Base.astro';
 import { fmt } from '../../lib/dates';
+import { CATEGORY_LIST } from '../../lib/categories';
 
 const courses = (await getCollection('courses')).sort((a, b) => {
   const rank = (s: string) => (s === 'ongoing' ? 0 : 1);
@@ -19,12 +20,13 @@ const allNotes = (await getCollection('notes')).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime(),
 );
 
-/** Past notes per course, so the recorder can show what came before. */
+/** Past coursework notes per course, so the recorder can show what came before. */
 const notesByCourse: Record<string, { title: string; href: string; date: string }[]> = {};
 for (const n of allNotes) {
+  if (!n.data.course) continue;
   (notesByCourse[n.data.course.id] ??= []).push({
     title: n.data.title,
-    href: `/iith/notes/${n.id}/`,
+    href: `/notes/${n.id}/`,
     date: fmt(n.data.date),
   });
 }
@@ -58,9 +60,25 @@ for (const n of allNotes) {
     </span>
   </div>
 
+  <div class="alert-warn card" id="no-token-warning" hidden>
+    <span>
+      <strong>Nothing you record here is saved until you press Save to site</strong>, and
+      saving needs a GitHub token. Add one in Keys below before you start, or you will
+      finish the lecture with no way to keep it except Download.
+    </span>
+  </div>
+
   <div class="card">
     <div class="controls">
       <label class="field">
+        <span class="field-label">Section</span>
+        <select id="category">
+          {CATEGORY_LIST.map((c) => (
+            <option value={c.id} selected={c.id === 'iith'}>{c.label}</option>
+          ))}
+        </select>
+      </label>
+      <label class="field" id="course-field">
         <span class="field-label">Course</span>
         <select id="course">
           {courseOptions.map((c) => (
@@ -116,6 +134,7 @@ for (const n of allNotes) {
   <section class="section" id="past-notes-section">
     <div class="section-head">
       <h2>Notes for this course</h2>
+      <a class="section-link" href="/notes/">All notes <Icon name="lucide:arrow-right" /></a>
       <span class="meta" id="past-count"></span>
     </div>
     <div class="card">
@@ -274,6 +293,13 @@ for (const n of allNotes) {
     color: var(--critical);
     border-color: var(--critical-tint-border);
   }
+  .alert-warn {
+    font-size: 13.5px;
+    color: var(--warning);
+    background: var(--warning-tint);
+    border-color: var(--warning-tint-border);
+    margin-bottom: 16px;
+  }
   .alert-info {
     font-size: 13.5px;
     color: var(--accent-strong);
@@ -343,6 +369,9 @@ for (const n of allNotes) {
     document.getElementById(id) as T;
 
   const els = {
+    category: $<HTMLSelectElement>('category'),
+    courseField: $('course-field'),
+    noTokenWarning: $('no-token-warning'),
     course: $<HTMLSelectElement>('course'),
     topic: $<HTMLInputElement>('topic'),
     start: $<HTMLButtonElement>('start'),
@@ -386,6 +415,25 @@ for (const n of allNotes) {
   let tickHandle: number | undefined;
   let aiBusy = false;
   let wakeLock: any = null;
+
+  // ---------- section + save-readiness ----------
+  const isCourseCategory = () => els.category.value === 'iith';
+
+  function refreshCategory() {
+    els.courseField.hidden = !isCourseCategory();
+    const section = document.getElementById('past-notes-section') as HTMLElement;
+    section.hidden = !isCourseCategory();
+  }
+
+  /** Warn BEFORE recording, not after: a missing token used to surface only at
+      the end, once the lecture was already over. */
+  function refreshSaveReadiness() {
+    els.noTokenWarning.hidden = Boolean(localStorage.getItem('live.githubToken'));
+  }
+
+  els.category.addEventListener('change', refreshCategory);
+  refreshCategory();
+  refreshSaveReadiness();
 
   // ---------- past notes for the selected course ----------
   const pastNotes = (window as any).__pastNotes as Record<
@@ -436,6 +484,7 @@ for (const n of allNotes) {
     localStorage.setItem('live.anthropicKey', els.keyAnthropic.value.trim());
     localStorage.setItem('live.githubToken', els.keyGithub.value.trim());
     els.keysStatus.textContent = 'Saved in this browser.';
+    refreshSaveReadiness();
   });
 
   // Prove the key works before class, not during it.
@@ -585,12 +634,14 @@ for (const n of allNotes) {
 
   function begin(existing?: LiveSession) {
     const option = els.course.selectedOptions[0];
+    const courseCategory = isCourseCategory();
     session =
       existing ??
       createSession({
-        courseId: els.course.value,
-        courseCode: option?.dataset.code ?? els.course.value,
-        courseName: option?.dataset.name ?? '',
+        category: els.category.value,
+        courseId: courseCategory ? els.course.value : '',
+        courseCode: courseCategory ? (option?.dataset.code ?? els.course.value) : '',
+        courseName: courseCategory ? (option?.dataset.name ?? '') : '',
         topic: els.topic.value.trim(),
       });
     persistSessionNow(session);
@@ -601,6 +652,7 @@ for (const n of allNotes) {
     els.restoreBanner.hidden = true;
     els.course.disabled = true;
     els.topic.disabled = true;
+    els.category.disabled = true;
     renderTranscript();
     void renderNotes();
     recognizer.start();
@@ -617,6 +669,7 @@ for (const n of allNotes) {
     els.start.hidden = false;
     els.course.disabled = false;
     els.topic.disabled = false;
+    els.category.disabled = false;
     els.transcriptInterim.textContent = '';
     try {
       wakeLock?.release();
