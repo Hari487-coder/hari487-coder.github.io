@@ -43,13 +43,31 @@ export function createRecognizer(cb: RecognizerCallbacks): Recognizer {
     r.interimResults = true;
     r.lang = 'en-IN';
 
+    /**
+     * How many leading results have already been handed to onFinal.
+     *
+     * event.results is cumulative, and Chrome does NOT reliably advance
+     * event.resultIndex when continuous is true: it commonly stays at 0. Starting
+     * the loop there re-emitted every settled result on every event, so a lecture
+     * grew as the square of the number of utterances. The 31 Jul EM5270 recording
+     * came back as 27,823 words drawn from 534 unique ones, which is that bug.
+     *
+     * Results settle in order, so a high water mark is enough, and it is correct
+     * whether or not resultIndex happens to be trustworthy. It lives inside
+     * build() so a restart starts counting from zero against fresh results.
+     */
+    let emittedFinals = 0;
+
     r.onresult = (event: any) => {
       let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      for (let i = 0; i < event.results.length; i++) {
         const result = event.results[i];
         const text = result[0]?.transcript ?? '';
         if (result.isFinal) {
-          if (text.trim()) cb.onFinal(text.trim());
+          if (i >= emittedFinals) {
+            emittedFinals = i + 1;
+            if (text.trim()) cb.onFinal(text.trim());
+          }
         } else {
           interim += text;
         }

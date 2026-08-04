@@ -281,6 +281,25 @@ a missing token BEFORE recording rather than after, because the silent version c
 set of real lecture notes. An unsaved session survives in `live.session` and can be
 recovered from the restore banner.
 
+## Speech recognition quality (read before touching the live recorder)
+
+**Chrome does not reliably advance `event.resultIndex` when `continuous = true`;
+it commonly stays at 0.** `event.results` is cumulative, so looping from
+`resultIndex` re-emits every settled result on every event and the transcript
+grows as the SQUARE of the number of utterances. This shipped on 31 Jul and cost
+a real lecture: `em5270-2026-07-31` came back as 27,823 words drawn from 534
+unique ones. `recognizer.ts` now keeps a per-instance high water mark
+(`emittedFinals`) instead of trusting the index, covered by `recognizer.test.ts`.
+Never "simplify" that loop back to starting at `resultIndex`.
+
+**Web Speech is the weak link, not the wiring.** Even with the duplication fixed,
+Chrome's recogniser is built for short commands, and on 90 minutes of accented
+lecture speech at room distance it produces barely usable text. Measured against
+the same course on the same day, `onnx-community/whisper-base.en` and
+`faster-whisper small.en` both produce clean sentences where Web Speech produces
+word salad. If transcript quality matters, capture the audio and put it through
+the import path (`/iith/capture/import/`) rather than trusting the live text.
+
 ## Gotchas
 
 **Deleting a content file leaves a stale entry in `node_modules/.astro/data-store.json`,
