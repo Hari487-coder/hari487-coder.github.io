@@ -40,6 +40,12 @@ fine); you sign in on the page itself with your IITH account.
 - **"admin_policy_enforced" / app blocked**: IITH's Workspace admin restricts
   third-party apps for institute accounts. Ask IITH IT to allow the app (give them the
   client ID). Nothing else fixes this.
+- **"Error 400: redirect_uri_mismatch"**: the exact redirect URI this page sends is
+  not listed on the OAuth client. Google shows this on its own page and never comes
+  back to the site, so open **Setup** on `/iith/inbox/`: it prints the exact string,
+  with a Copy button. Paste that verbatim (trailing slash included) into **Authorized
+  redirect URIs**, and the origin above it into **Authorized JavaScript origins**.
+  Note the port matters when testing locally: a preview on `:4340` needs its own entry.
 - **"invalid_client"**: the pasted client ID is wrong or the origin is missing from
   step 5.
 - **"access_denied"**: you declined consent, or your IITH email is not in Test users

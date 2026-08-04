@@ -88,6 +88,27 @@ const trackedTitles = assignments.map((a) =>
         <button class="btn-secondary" id="save-client">Save override</button>
         <span class="meta" id="client-status"></span>
       </p>
+      {/* redirect_uri_mismatch is the most common failure and is impossible to
+          debug by guessing, because Google never says what it expected. Show the
+          exact string this page sends so it can be pasted, not retyped. */}
+      <div class="field">
+        <span class="field-label">Redirect URI this page sends</span>
+        <p class="uri-row">
+          <code class="mono uri" id="redirect-uri"></code>
+          <button class="btn-secondary" id="copy-redirect">
+            <Icon name="lucide:copy" /> Copy
+          </button>
+        </p>
+        <p class="meta">
+          Google rejects sign-in with <strong>Error 400: redirect_uri_mismatch</strong>
+          unless this exact string, trailing slash included, is listed under
+          <strong>Authorized redirect URIs</strong> on your OAuth client in Google Cloud
+          Console (APIs and Services, Credentials). Add
+          <code class="mono" id="origin-hint"></code> under
+          <strong>Authorized JavaScript origins</strong> in the same place. Changes can
+          take a few minutes to apply.
+        </p>
+      </div>
       <p class="meta">
         Your client ID is built into this page, so there is nothing to paste. Leave this
         field empty unless you want to point at a different Google Cloud client. A client
@@ -101,6 +122,20 @@ const trackedTitles = assignments.map((a) =>
 </Base>
 
 <style>
+  .uri-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 0 0 6px;
+  }
+  .uri {
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 7px 10px;
+    word-break: break-all;
+  }
   .connect-copy {
     margin: 12px 0 0;
     color: var(--text-secondary);
@@ -266,6 +301,9 @@ const trackedTitles = assignments.map((a) =>
     mailList: $<HTMLUListElement>('mail-list'),
     mailCount: $('mail-count'),
     clientId: $<HTMLInputElement>('client-id'),
+    redirectUri: $('redirect-uri'),
+    originHint: $('origin-hint'),
+    copyRedirect: $<HTMLButtonElement>('copy-redirect'),
     saveClient: $<HTMLButtonElement>('save-client'),
     clientStatus: $('client-status'),
   };
@@ -274,6 +312,20 @@ const trackedTitles = assignments.map((a) =>
   // The field shows any override; empty means the built-in client is in use.
   els.clientId.value = localStorage.getItem('inbox.clientId') ?? '';
   els.clientId.placeholder = DEFAULT_CLIENT_ID;
+
+  // Built from location, exactly as buildAuthUrl does, so what is shown is
+  // literally what Google will receive, including the port when running locally.
+  const redirectUri = `${location.origin}/iith/inbox/`;
+  els.redirectUri.textContent = redirectUri;
+  els.originHint.textContent = location.origin;
+  els.copyRedirect.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(redirectUri);
+      els.clientStatus.textContent = 'redirect URI copied';
+    } catch {
+      els.clientStatus.textContent = 'could not copy, select the text instead';
+    }
+  });
   els.saveClient.addEventListener('click', () => {
     const value = els.clientId.value.trim();
     if (value) localStorage.setItem('inbox.clientId', value);

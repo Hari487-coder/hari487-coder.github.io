@@ -162,14 +162,13 @@ export function createAudioRecorder(callbacks: {
         return;
       }
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            channelCount: 1,
-            echoCancellation: false, // a lecture hall is not a phone call
-            noiseSuppression: false, // suppression eats quiet speech from the back
-            autoGainControl: true,
-          },
-        });
+        // Deliberately permissive. Asking for specific constraints
+        // (channelCount, echoCancellation: false) forces Chrome to reopen the
+        // microphone in a different mode, and that reconfiguration kills the
+        // capture SpeechRecognition is already holding: the transcript died the
+        // moment recording started. Whisper resamples to 16 kHz mono anyway, so
+        // the tighter constraints bought nothing worth that.
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
         type = pickMimeType((t) => MediaRecorder.isTypeSupported(t));
         recorder = new MediaRecorder(

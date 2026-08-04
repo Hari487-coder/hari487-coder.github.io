@@ -112,6 +112,10 @@ export function explainAuthError(code: string): string {
       return 'The sign-in response could not be verified. Try connecting again.';
     case 'invalid_client':
       return 'The OAuth client ID is wrong. Check it in settings below.';
+    case 'redirect_uri_mismatch':
+      // Usually Google shows this on its own Error 400 page and never redirects
+      // back, so Setup prints the exact URI to paste. Handled here in case it does.
+      return `Google does not recognise this page's redirect URI. Open Setup below and add ${location.origin}/iith/inbox/ to Authorized redirect URIs on your OAuth client.`;
     default:
       return `Google sign-in failed (${code}). Try connecting again.`;
   }
