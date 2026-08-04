@@ -297,8 +297,30 @@ Chrome's recogniser is built for short commands, and on 90 minutes of accented
 lecture speech at room distance it produces barely usable text. Measured against
 the same course on the same day, `onnx-community/whisper-base.en` and
 `faster-whisper small.en` both produce clean sentences where Web Speech produces
-word salad. If transcript quality matters, capture the audio and put it through
-the import path (`/iith/capture/import/`) rather than trusting the live text.
+word salad. **Treat the live transcript as a rough index, not the record.**
+
+**The recorder therefore also captures the audio** (`src/lib/live/audio.ts`), so a
+poor live transcript costs an inconvenience rather than the class. Design points
+that are load bearing:
+
+- **SpeechRecognition cannot be handed a MediaStream**, so MediaRecorder takes a
+  SECOND `getUserMedia`. Two consumers of one mic is fine. If it fails for any
+  reason the lecture continues speech-only; recording audio must never be able to
+  stop the class being recorded at all.
+- **Chunks go to IndexedDB every 30s**, not to an in-memory array. The recorder
+  already promises a crash cannot lose a lecture, and audio is now the good
+  record, so it cannot be the one thing held only in memory. A crash costs at
+  most 30 seconds.
+- Opus mono at 32 kbps, roughly 20 MB for 90 minutes. Whisper resamples to 16 kHz
+  mono anyway, so a higher bitrate costs storage and buys nothing.
+- `echoCancellation` and `noiseSuppression` are OFF on purpose: they are tuned for
+  a phone call and eat quiet speech from the back of a hall.
+- **The store holds ONE recording.** Starting a lecture clears it, so a second
+  lecture cannot be concatenated onto the first into an unplayable file, and Start
+  confirms first when there is un-downloaded audio to lose. Saving notes does NOT
+  delete the audio (you may still want to re-transcribe); discarding does.
+- Audio never leaves the browser. `window.__live.audio` exposes the store so the
+  whole path can be exercised without a microphone.
 
 ## Gotchas
 

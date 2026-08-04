@@ -106,6 +106,7 @@ for (const n of allNotes) {
         <span class="badge" id="status-badge"><span class="dot" aria-hidden="true"></span><span id="status-text">idle</span></span>
         <span class="mono meta" id="timer">00:00</span>
         <span class="mono meta" id="wordcount">0 words</span>
+        <span class="mono meta" id="audio-status"></span>
       </div>
     </div>
   </div>
@@ -155,8 +156,17 @@ for (const n of allNotes) {
     <p class="actions-row">
       <button class="btn" id="save"><Icon name="lucide:upload" /> Save to site</button>
       <button class="btn-secondary" id="download"><Icon name="lucide:download" /> Download .md</button>
+      <button class="btn-secondary" id="download-audio" hidden>
+        <Icon name="lucide:file-audio" /> <span id="download-audio-label">Download recording</span>
+      </button>
       <button class="btn-secondary" id="copy"><Icon name="lucide:copy" /> Copy notes</button>
       <button class="btn-secondary" id="discard"><Icon name="lucide:trash-2" /> Discard</button>
+    </p>
+    {/* The live transcript is the rough index; the audio is the good record. */}
+    <p class="meta" id="audio-hint" hidden>
+      Chrome's live transcript is rough on lecture audio. For a clean one, download the
+      recording and run it through <a href="/iith/capture/import/">import</a>, which
+      transcribes locally with Whisper.
     </p>
     <div class="alert-success card-lite" id="save-success" hidden>
       Saved. The site is rebuilding; the notes will be live in about two minutes at
@@ -368,6 +378,15 @@ for (const n of allNotes) {
   } from '../../../lib/live/session';
   import { MIN_DELTA_CHARS, updateNotes } from '../../../lib/live/notesEngine';
   import { downloadMd, saveToRepo } from '../../../lib/live/saver';
+  import {
+    appendChunk,
+    audioFilename,
+    clearRecording,
+    createAudioRecorder,
+    formatBytes,
+    readRecording,
+    recordedBytes,
+  } from '../../../lib/live/audio';
 
   const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
     document.getElementById(id) as T;
@@ -411,6 +430,10 @@ for (const n of allNotes) {
     restoreInfo: $('restore-info'),
     restoreOpen: $<HTMLButtonElement>('restore-open'),
     restoreDiscard: $<HTMLButtonElement>('restore-discard'),
+    audioStatus: $('audio-status'),
+    downloadAudio: $<HTMLButtonElement>('download-audio'),
+    downloadAudioLabel: $('download-audio-label'),
+    audioHint: $('audio-hint'),
   };
 
   let session: LiveSession | null = null;
@@ -595,6 +618,20 @@ for (const n of allNotes) {
     if (document.visibilityState === 'visible' && recording) acquireWakeLock();
   });
 
+  // ---------- audio backup ----------
+  // Runs beside the recogniser so a poor live transcript costs an inconvenience
+  // rather than the class. Never blocks or stops the lecture on failure.
+  const audioRecorder = createAudioRecorder({
+    onState(state, detail) {
+      if (state === 'recording') els.audioStatus.textContent = 'audio 0 KB';
+      else if (state === 'unavailable') els.audioStatus.textContent = detail ?? 'audio off';
+      else els.audioStatus.textContent = '';
+    },
+    onProgress(bytes) {
+      els.audioStatus.textContent = `audio ${formatBytes(bytes)}`;
+    },
+  });
+
   // ---------- recognizer ----------
   const recognizer = createRecognizer({
     onFinal(text) {
@@ -660,6 +697,16 @@ for (const n of allNotes) {
     renderTranscript();
     void renderNotes();
     recognizer.start();
+    // Audio is a separate microphone stream from SpeechRecognition, and is
+    // deliberately not awaited: the lecture starts listening immediately even if
+    // the recorder is slow to come up or never does.
+    //
+    // The chunk store holds one recording. Clearing first is what stops a second
+    // lecture being concatenated onto the first into an unplayable file. The
+    // restore banner offers the previous recording before it can get here.
+    void clearRecording()
+      .catch(() => {})
+      .then(() => audioRecorder.start());
     void acquireWakeLock();
     startTimers();
   }
@@ -667,6 +714,7 @@ for (const n of allNotes) {
   async function finish() {
     recording = false;
     recognizer.stop();
+    audioRecorder.stop();
     stopTimers();
     setBadge('stopped', '');
     els.stop.hidden = true;
@@ -686,9 +734,43 @@ for (const n of allNotes) {
     els.saveStatus.textContent = els.save.disabled
       ? 'add a GitHub token in settings to save, or download'
       : '';
+    await offerRecording();
   }
 
-  els.start.addEventListener('click', () => begin());
+  /** Show the audio actions only when there is actually audio to offer. */
+  async function offerRecording() {
+    let bytes = 0;
+    try {
+      bytes = await recordedBytes();
+    } catch {
+      // No IndexedDB (private mode, blocked storage): nothing to offer.
+    }
+    const has = bytes > 0;
+    els.downloadAudio.hidden = !has;
+    els.audioHint.hidden = !has;
+    if (has) els.downloadAudioLabel.textContent = `Download recording (${formatBytes(bytes)})`;
+  }
+
+  els.start.addEventListener('click', async () => {
+    // The store holds one recording, so starting a new lecture drops the old
+    // audio. Only ask when there is genuinely something to lose.
+    let pending = 0;
+    try {
+      pending = await recordedBytes();
+    } catch {
+      // No IndexedDB: nothing to lose.
+    }
+    if (
+      pending > 0 &&
+      !confirm(
+        `Starting a new recording deletes the previous audio (${formatBytes(pending)}). ` +
+          'Download it first if you still need it. Start anyway?',
+      )
+    ) {
+      return;
+    }
+    begin();
+  });
   els.stop.addEventListener('click', () => void finish());
 
   // ---------- finish actions ----------
@@ -719,6 +801,31 @@ for (const n of allNotes) {
     if (session) downloadMd(session, new Date());
   });
 
+  els.downloadAudio.addEventListener('click', async () => {
+    els.downloadAudio.disabled = true;
+    try {
+      const blob = await readRecording(audioRecorder.mimeType());
+      if (!blob) {
+        els.saveStatus.textContent = 'no recording found';
+        return;
+      }
+      // Name it after the note it belongs to, so the pair is obvious later.
+      const prefix = session?.courseId || session?.category || '';
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = audioFilename(prefix, new Date(), blob.type);
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      els.saveStatus.textContent = `could not read the recording: ${
+        err instanceof Error ? err.message : String(err)
+      }`;
+    } finally {
+      els.downloadAudio.disabled = false;
+    }
+  });
+
   els.copy.addEventListener('click', async () => {
     if (!session) return;
     await navigator.clipboard.writeText(session.notes || transcriptText(session));
@@ -727,10 +834,14 @@ for (const n of allNotes) {
 
   els.discard.addEventListener('click', () => {
     if (!session) return;
-    if (!confirm('Discard this session? The transcript and notes will be gone.')) return;
+    if (!confirm('Discard this session? The transcript, notes and recording will be gone.')) return;
     clearSession();
+    void clearRecording().catch(() => {});
     session = null;
     els.actionsCard.hidden = true;
+    els.downloadAudio.hidden = true;
+    els.audioHint.hidden = true;
+    els.audioStatus.textContent = '';
     els.transcriptFinal.textContent = '';
     els.notes.innerHTML = '';
     els.transcriptEmpty.hidden = false;
@@ -757,6 +868,7 @@ for (const n of allNotes) {
     });
     els.restoreDiscard.addEventListener('click', () => {
       clearSession();
+      void clearRecording().catch(() => {});
       els.restoreBanner.hidden = true;
     });
   }
@@ -783,5 +895,7 @@ for (const n of allNotes) {
     },
     tick: () => aiTick(false),
     state: () => ({ recording, session }),
+    // Exercises the audio store without a microphone: append, read back, clear.
+    audio: { appendChunk, readRecording, recordedBytes, clearRecording, offerRecording },
   };
 </script>
