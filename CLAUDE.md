@@ -281,6 +281,31 @@ a missing token BEFORE recording rather than after, because the silent version c
 set of real lecture notes. An unsaved session survives in `live.session` and can be
 recovered from the restore banner.
 
+## Tasks kanban (`/tasks/`)
+
+Three boards matching the sidebar sections (workspace / iith / content), each with
+To do, Doing, Done. Cards are markdown in `src/content/tasks/`, so the boards are
+the same on every device rather than living in one browser.
+
+**The overlay is the load-bearing idea.** A change is a git commit and the site
+takes ~2 minutes to rebuild, so a board rendering only built state would snap back
+on reload and look broken. `src/lib/tasks.ts` keeps pending edits (`moved`,
+`added`, `removed`) in `localStorage` under `tasks.overlay` and merges them over
+the built tasks. The merge is **self healing**: any entry the rebuilt content now
+agrees with is dropped, so the overlay drains to empty instead of growing forever
+and masking the truth. Pending cards render at reduced opacity. Every mutation is
+optimistic and **rolls back on API failure**, so the board never claims something
+was stored when it was not.
+
+Writes use `upsertFile` / `deleteFile` in `src/lib/github.ts` (the older
+`putNewFile` never overwrites, which is wrong for moving a card). `upsertFile`
+sends the current `sha`, making the write a compare-and-set: a concurrent change
+gets a 409 rather than being silently clobbered. Needs the same GitHub token as
+Capture; without it the boards are read only and say so.
+
+Assignments stay separate on purpose: coursework with a due date and a course,
+versus anything else that needs doing.
+
 ## Speech recognition quality (read before touching the live recorder)
 
 **Chrome does not reliably advance `event.resultIndex` when `continuous = true`;

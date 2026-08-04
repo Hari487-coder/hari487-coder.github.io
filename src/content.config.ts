@@ -31,6 +31,24 @@ const courses = defineCollection({
   }),
 });
 
+/**
+ * Loose todos, one file each, split across the same three boards as the sidebar.
+ *
+ * Deliberately separate from `assignments`: an assignment is coursework with a
+ * due date and a course, a task is anything else that needs doing. Sharing the
+ * todo/doing/done vocabulary keeps both readable as the same kind of board.
+ */
+const tasks = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/tasks' }),
+  schema: z.object({
+    title: z.string(),
+    board: z.enum(['workspace', 'iith', 'content']),
+    status: z.enum(['todo', 'doing', 'done']),
+    due: z.coerce.date().optional(),
+    created: z.coerce.date(),
+  }),
+});
+
 const assignments = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/assignments' }),
   schema: z.object({
@@ -80,4 +98,4 @@ const ideas = defineCollection({
   }),
 });
 
-export const collections = { courses, assignments, projects, notes, ideas };
+export const collections = { courses, assignments, projects, notes, ideas, tasks };

@@ -23,6 +23,7 @@ const groups: { label: string; links: Link[] }[] = [
     label: 'Workspace',
     links: [
       { href: '/', label: 'Home', icon: 'lucide:layout-dashboard', match: (p) => p === '/' },
+      { href: '/tasks/', label: 'Tasks', icon: 'lucide:square-check-big', match: (p) => p.startsWith('/tasks') },
       { href: '/projects/', label: 'Projects', icon: 'lucide:wrench', match: (p) => p.startsWith('/projects') },
       { href: '/graph/', label: 'Graph', icon: 'lucide:share-2', match: (p) => p.startsWith('/graph') },
     ],

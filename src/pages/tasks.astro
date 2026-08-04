@@ -1,0 +1,525 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import Base from '../layouts/Base.astro';
+import { BOARDS, BOARD_META, STATUSES, STATUS_META, type Task } from '../lib/tasks';
+
+const entries = await getCollection('tasks');
+
+/** Dates become plain yyyy-mm-dd strings so nothing downstream needs a timezone. */
+const iso = (d: Date | undefined) => (d ? d.toISOString().slice(0, 10) : '');
+
+const tasks: Task[] = entries.map((entry) => ({
+  slug: entry.id,
+  title: entry.data.title,
+  board: entry.data.board,
+  status: entry.data.status,
+  due: iso(entry.data.due),
+  created: iso(entry.data.created),
+}));
+
+const open = tasks.filter((t) => t.status !== 'done').length;
+---
+
+<Base title="Tasks" description="Everything pending and done, split across the three boards.">
+  <div class="page-head">
+    <div class="page-head-text">
+      <p class="eyebrow">{open} open</p>
+      <h1>Tasks</h1>
+      <p class="subtitle">
+        One board per section. Cards move left and right; everything is stored in this
+        repo, so the boards look the same on your phone and your laptop.
+      </p>
+    </div>
+  </div>
+
+  <div class="card add-card">
+    <div class="add-row">
+      <input id="new-title" type="text" placeholder="What needs doing?" aria-label="Task" />
+      <select id="new-board" aria-label="Board">
+        {BOARDS.map((b) => <option value={b}>{BOARD_META[b].label}</option>)}
+      </select>
+      <input id="new-due" type="date" aria-label="Due date (optional)" />
+      <button class="btn" id="add"><Icon name="lucide:plus" /> Add</button>
+    </div>
+    <p class="meta" id="add-status"></p>
+    <div class="alert-error card-lite" id="add-error" hidden></div>
+  </div>
+
+  {BOARDS.map((board) => (
+    <section class="section" data-board={board}>
+      <div class="section-head">
+        <h2>{BOARD_META[board].label}</h2>
+        <span class="meta" data-open-count={board}></span>
+      </div>
+      <p class="section-blurb meta">{BOARD_META[board].blurb}</p>
+      <div class="board">
+        {STATUSES.map((status) => (
+          <div class="col" data-col={`${board}:${status}`}>
+            <p class="col-head">
+              <span>{STATUS_META[status].label}</span>
+              <span class="col-count" data-count={`${board}:${status}`}>0</span>
+            </p>
+            <ul class="col-body" data-list={`${board}:${status}`}></ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  ))}
+
+  <p class="meta token-note" id="token-note" hidden>
+    Moving or adding a card writes a file to this repo, which needs the GitHub token
+    from <a href="/iith/capture/">Capture settings</a>. Without it the boards are
+    read only.
+  </p>
+</Base>
+
+<style>
+  .add-card {
+    margin-top: 4px;
+  }
+  .add-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .add-row input[type='text'] {
+    flex: 1 1 20rem;
+    min-width: 0;
+  }
+  .add-row input,
+  .add-row select {
+    padding: 10px 13px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    font-size: 14.5px;
+    font-family: inherit;
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+  .add-row input:focus,
+  .add-row select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+  .section-blurb {
+    margin: -4px 0 10px;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 860px) {
+    .board {
+      grid-template-columns: 1fr;
+    }
+  }
+  .col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    min-height: 90px;
+  }
+  .col-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 0 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text-muted);
+  }
+  .col-count {
+    font-variant-numeric: tabular-nums;
+  }
+  .col-body {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .task {
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 11px;
+  }
+  .task-title {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+  .task[data-status='done'] .task-title {
+    color: var(--text-muted);
+    text-decoration: line-through;
+  }
+  .task-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .task-due {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .task-due.hot {
+    color: var(--critical);
+    font-weight: 600;
+  }
+  .task-actions {
+    display: flex;
+    gap: 4px;
+  }
+  .task-actions button {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm, 8px);
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+  }
+  .task-actions button:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent-strong);
+  }
+  .task-actions button:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .col-empty {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin: 2px 0;
+  }
+  .pending {
+    opacity: 0.62;
+  }
+  .token-note {
+    margin-top: 22px;
+  }
+</style>
+
+<script define:vars={{ builtTasks: tasks }}>
+  window.__tasksData = builtTasks;
+</script>
+
+<script>
+  import {
+    BOARDS,
+    STATUSES,
+    column,
+    mergeTasks,
+    nextStatus,
+    openCount,
+    slugify,
+    taskMarkdown,
+    EMPTY_OVERLAY,
+    type Board,
+    type Overlay,
+    type Task,
+    type TaskStatus,
+  } from '../lib/tasks';
+  import { deleteFile, upsertFile } from '../lib/github';
+
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
+    document.getElementById(id) as T;
+
+  const built = (window as any).__tasksData as Task[];
+  const OVERLAY_KEY = 'tasks.overlay';
+  const DIR = 'src/content/tasks';
+
+  const els = {
+    title: $<HTMLInputElement>('new-title'),
+    board: $<HTMLSelectElement>('new-board'),
+    due: $<HTMLInputElement>('new-due'),
+    add: $<HTMLButtonElement>('add'),
+    addStatus: $('add-status'),
+    addError: $('add-error'),
+    tokenNote: $('token-note'),
+  };
+
+  function loadOverlay(): Overlay {
+    try {
+      const raw = localStorage.getItem(OVERLAY_KEY);
+      return raw ? { ...EMPTY_OVERLAY, ...JSON.parse(raw) } : { ...EMPTY_OVERLAY };
+    } catch {
+      return { ...EMPTY_OVERLAY };
+    }
+  }
+
+  function saveOverlay(overlay: Overlay) {
+    try {
+      localStorage.setItem(OVERLAY_KEY, JSON.stringify(overlay));
+    } catch {
+      // Private mode: the board still works, it just will not survive a reload.
+    }
+  }
+
+  let overlay = loadOverlay();
+  let tasks: Task[] = [];
+
+  const token = () => localStorage.getItem('live.githubToken');
+  const todayIso = () => new Date().toISOString().slice(0, 10);
+
+  function render() {
+    const merged = mergeTasks(built, overlay);
+    tasks = merged.tasks;
+    // The overlay drains itself as the rebuild catches up; persist when it does.
+    if (merged.changed) {
+      overlay = merged.overlay;
+      saveOverlay(overlay);
+    }
+
+    const pending = new Set([
+      ...Object.keys(overlay.moved),
+      ...overlay.added.map((t) => t.slug),
+    ]);
+
+    for (const board of BOARDS) {
+      const countEl = document.querySelector(`[data-open-count="${board}"]`);
+      if (countEl) countEl.textContent = `${openCount(tasks, board)} open`;
+
+      for (const status of STATUSES) {
+        const list = document.querySelector(`[data-list="${board}:${status}"]`);
+        const count = document.querySelector(`[data-count="${board}:${status}"]`);
+        if (!list) continue;
+        const items = column(tasks, board as Board, status as TaskStatus);
+        if (count) count.textContent = String(items.length);
+        list.replaceChildren(
+          ...(items.length
+            ? items.map((task) => card(task, pending.has(task.slug)))
+            : [empty()]),
+        );
+      }
+    }
+
+    els.tokenNote.hidden = Boolean(token());
+  }
+
+  function empty(): HTMLElement {
+    const p = document.createElement('p');
+    p.className = 'col-empty';
+    p.textContent = 'Nothing here.';
+    return p;
+  }
+
+  function card(task: Task, isPending: boolean): HTMLElement {
+    const li = document.createElement('li');
+    li.className = isPending ? 'task pending' : 'task';
+    li.dataset.status = task.status;
+
+    const title = document.createElement('div');
+    title.className = 'task-title';
+    title.textContent = task.title;
+
+    const foot = document.createElement('div');
+    foot.className = 'task-foot';
+
+    const due = document.createElement('span');
+    due.className = 'task-due';
+    if (task.due) {
+      due.textContent = task.due;
+      if (task.status !== 'done' && task.due <= todayIso()) due.classList.add('hot');
+    } else {
+      due.textContent = isPending ? 'saving' : '';
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'task-actions';
+    actions.append(
+      moveButton(task, -1, '←', 'Move left'),
+      moveButton(task, 1, '→', 'Move right'),
+      removeButton(task),
+    );
+
+    foot.append(due, actions);
+    li.append(title, foot);
+    return li;
+  }
+
+  function moveButton(task: Task, direction: 1 | -1, glyph: string, label: string) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = glyph;
+    button.title = label;
+    button.setAttribute('aria-label', `${label}: ${task.title}`);
+    const target = nextStatus(task.status, direction);
+    button.disabled = !target;
+    if (target) button.addEventListener('click', () => void move(task, target));
+    return button;
+  }
+
+  function removeButton(task: Task) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = '×';
+    button.title = 'Delete';
+    button.setAttribute('aria-label', `Delete: ${task.title}`);
+    button.addEventListener('click', () => void remove(task));
+    return button;
+  }
+
+  function requireToken(): string | null {
+    const value = token();
+    if (!value) {
+      els.addError.hidden = false;
+      els.addError.textContent =
+        'No GitHub token saved. Add one in Capture settings to change the boards.';
+    }
+    return value;
+  }
+
+  /** Optimistic: the card moves now, the commit follows and may take ~2 min to build. */
+  async function move(task: Task, target: TaskStatus) {
+    const gh = requireToken();
+    if (!gh) return;
+
+    const before = { ...overlay, moved: { ...overlay.moved } };
+    const isLocal = overlay.added.some((t) => t.slug === task.slug);
+    if (isLocal) {
+      overlay.added = overlay.added.map((t) =>
+        t.slug === task.slug ? { ...t, status: target } : t,
+      );
+    } else {
+      overlay.moved[task.slug] = target;
+    }
+    saveOverlay(overlay);
+    render();
+    els.addStatus.textContent = 'saving...';
+
+    try {
+      await upsertFile({
+        token: gh,
+        path: `${DIR}/${task.slug}.md`,
+        content: taskMarkdown({ ...task, status: target }),
+        message: `chore(tasks): ${task.title} to ${target}`,
+      });
+      els.addStatus.textContent = 'saved, the board rebuilds in about two minutes';
+    } catch (err) {
+      overlay = before; // roll back so the board never lies about what is stored
+      saveOverlay(overlay);
+      render();
+      els.addStatus.textContent = '';
+      els.addError.hidden = false;
+      els.addError.textContent = `Could not move it: ${
+        err instanceof Error ? err.message : String(err)
+      }`;
+    }
+  }
+
+  async function remove(task: Task) {
+    const gh = requireToken();
+    if (!gh) return;
+    if (!confirm(`Delete "${task.title}"?`)) return;
+
+    const before = { ...overlay, removed: [...overlay.removed], added: [...overlay.added] };
+    overlay.added = overlay.added.filter((t) => t.slug !== task.slug);
+    if (built.some((t) => t.slug === task.slug)) overlay.removed.push(task.slug);
+    saveOverlay(overlay);
+    render();
+
+    try {
+      await deleteFile({
+        token: gh,
+        path: `${DIR}/${task.slug}.md`,
+        message: `chore(tasks): drop ${task.title}`,
+      });
+      els.addStatus.textContent = 'deleted';
+    } catch (err) {
+      overlay = before;
+      saveOverlay(overlay);
+      render();
+      els.addError.hidden = false;
+      els.addError.textContent = `Could not delete it: ${
+        err instanceof Error ? err.message : String(err)
+      }`;
+    }
+  }
+
+  async function add() {
+    const title = els.title.value.trim();
+    if (!title) return;
+    const gh = requireToken();
+    if (!gh) return;
+
+    const created = todayIso();
+    let slug = slugify(title, new Date());
+    // Two tasks with the same title on the same day would collide.
+    const taken = new Set([...built.map((t) => t.slug), ...overlay.added.map((t) => t.slug)]);
+    let candidate = slug;
+    for (let i = 2; taken.has(candidate); i++) candidate = `${slug}-${i}`;
+    slug = candidate;
+
+    const task: Task = {
+      slug,
+      title,
+      board: els.board.value as Board,
+      status: 'todo',
+      due: els.due.value || '',
+      created,
+    };
+
+    els.add.disabled = true;
+    els.addError.hidden = true;
+    overlay.added.push(task);
+    saveOverlay(overlay);
+    render();
+    els.title.value = '';
+    els.due.value = '';
+    els.addStatus.textContent = 'saving...';
+
+    try {
+      await upsertFile({
+        token: gh,
+        path: `${DIR}/${slug}.md`,
+        content: taskMarkdown(task),
+        message: `chore(tasks): add ${title}`,
+      });
+      els.addStatus.textContent = 'saved, the board rebuilds in about two minutes';
+    } catch (err) {
+      overlay.added = overlay.added.filter((t) => t.slug !== slug);
+      saveOverlay(overlay);
+      render();
+      els.addStatus.textContent = '';
+      els.addError.hidden = false;
+      els.addError.textContent = `Could not add it: ${
+        err instanceof Error ? err.message : String(err)
+      }`;
+    } finally {
+      els.add.disabled = false;
+    }
+  }
+
+  els.add.addEventListener('click', () => void add());
+  els.title.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') void add();
+  });
+
+  render();
+
+  (window as any).__tasks = {
+    state: () => ({ tasks, overlay }),
+    render,
+    setOverlay(next: Overlay) {
+      overlay = next;
+      saveOverlay(overlay);
+      render();
+    },
+  };
+</script>
