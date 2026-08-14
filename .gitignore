@@ -10,3 +10,6 @@ public/__tmpaudio/
 # Coursework drafts stay out of the public repo: an assignment that has not been
 # submitted (or marked) must not be findable by classmates.
 docs/em*-class-journal-*.md
+docs/em5020-lectures-*.md
+docs/em5020-assignment-*.md
+docs/em5020-lecture-*-prep.md
